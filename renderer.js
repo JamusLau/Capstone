@@ -22,12 +22,22 @@ document.getElementById('scanButton').addEventListener('click', async () => {
     const functions = await ipcRenderer.invoke('get-functions', allFiles);
 
     console.log(functions);
-    // const functionsList = document.getElementById('functionsList');
-    // functionsList.innerHTML = '';
 
-    // functions.forEach(fn => {
-    //     const li = document.createElement('li');
-    //     li.textContent = `${fn.name} in ${fn.file}`;
-    //     functionsList.appendChild(li);
-    // });
+    const functionsList = document.getElementById('functions-list');
+    functionsList.innerHTML = '';
+
+    functions.forEach(fn => {
+        const fnContainer = document.createElement('div');
+        fnContainer.classList.add('function-box');
+
+        const fnHead = document.createElement('p');
+        fnHead.textContent = `${fn.name} in ${fn.file}`;
+        fnContainer.appendChild(fnHead);
+
+        const fnBody = document.createElement('pre');
+        fnBody.textContent = fn.body;
+        fnContainer.appendChild(fnBody);
+
+        functionsList.appendChild(fnContainer);
+    });
 });

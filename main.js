@@ -57,14 +57,18 @@ function extractFunctions(files) {
                 FunctionDeclaration(node) {
                     functions.push({
                         name: node.id.name,
-                        file: filePath
+                        file: filePath,
+                        parameters: node.params.map(param => param.name),
+                        body: code.slice(node.body.start, node.body.end)
                     });
                 },
                 FunctionExpression(node) {
                     if (node.id) {
                         functions.push({
                             name: node.id.name,
-                            file: filePath
+                            file: filePath,
+                            parameters: node.params.map(param => param.name),
+                            body: code.slice(node.body.start, node.body.end)
                         });
                     }
                 },
@@ -73,7 +77,9 @@ function extractFunctions(files) {
                     if (node.id) {
                         functions.push({
                             name: node.id.name,
-                            file: filePath
+                            file: filePath,
+                            parameters: node.params.map(param => param.name),
+                            body: code.slice(node.body.start, node.body.end)
                         });
                     }
                 }
