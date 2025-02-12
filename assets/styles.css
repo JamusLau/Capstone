@@ -1,3 +1,20 @@
+#function-box-div {
+    border: 2px solid #333;         /* Dark border */
+    margin: 10px;                   /* Space between boxes */
+    padding: 15px;          /* Padding inside the box */
+    background-color: #f4f4f4; /* Light background */
+    border-radius: 8px;     /* Rounded corners */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Light shadow for effect */
+    max-width: 600px;       /* Limit the width of the box */
+    word-wrap: break-word;  /* Allow long words to break onto the next line */
+}
+
+a.fill-fn-div {
+    display: block;
+    height: 100%;
+    width: 100%;
+    text-decoration: none;
+}
 .function-box {
     border: 2px solid #333;         /* Dark border */
     margin: 10px;                   /* Space between boxes */

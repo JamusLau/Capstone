@@ -7,12 +7,19 @@
     <link rel="stylesheet" href="./assets/styles.css">
 </head>
 <body>
-    <h1>Find JavaScript Functions in Directory</h1>
+    <label for="directoryInput"> Select input folder: </label>
+
     <input type="file" id="directoryInput" webkitdirectory directory>
     <button id="scanButton">Scan</button>
+    <br>
+    <br>
+    <label for="outputDirectoryInput"> Select output folder: </label>
+    <input type="file" id="outputDirectoryInput" webkitdirectory directory>
 
     <h2>Functions:</h2>
     <ul id="functions-list"></ul>
+
+    <h2>Function's user test cases:</h2>
 
     <script src="./renderer.js"></script>>
 </body>

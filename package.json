@@ -4,14 +4,16 @@
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "electron": "^34.0.2"
+    "electron": "^34.1.1",
+    "electron-builder": "^25.1.8"
   },
   "dependencies": {
     "acorn": "^8.14.0",

@@ -28,7 +28,11 @@ document.getElementById('scanButton').addEventListener('click', async () => {
 
     functions.forEach(fn => {
         const fnContainer = document.createElement('div');
+        fnContainer.id = "function-box-div";
         fnContainer.classList.add('function-box');
+
+        const fnBox = document.createElement('a');
+        fnContainer.appendChild
 
         const fnHead = document.createElement('p');
         fnHead.textContent = `${fn.name} in ${fn.file}`;
