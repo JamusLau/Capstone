@@ -23,18 +23,25 @@ function createWindow() {
         }
     });
 
-    win.loadFile('index.html'); //load file that contains the content and layout of the app's GUI
+    //load file that contains the content and layout of the app's GUI
+    win.loadFile('index.html'); 
 
     win.on('closed', () => {
         win = null;
     });
 }
 
+//ipc command to handle ipc calls from renderer.js
 ipcMain.handle('get-functions', async (event, files) => {
     console.log("files received",files); 
     return extractFunctions(files);
 });
 
+ipcMain.handle('load-function-tests', async (event, fn) => {
+    console.log("Function selected", fn);
+});
+
+// function to extract functions from files
 function extractFunctions(files) {
     const arr = Array.from(files);
     let functions = [];
@@ -90,6 +97,7 @@ function extractFunctions(files) {
     console.log(functions);
     return functions;
 }
+
 
 //checks when Electron has finished loading, then runs the function
 app.whenReady().then(createWindow);

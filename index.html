@@ -9,18 +9,36 @@
 <body>
     <label for="directoryInput"> Select input folder: </label>
 
-    <input type="file" id="directoryInput" webkitdirectory directory>
+    <input type="file" id="inputDirectoryInput" webkitdirectory directory>
     <button id="scanButton">Scan</button>
     <br>
     <br>
     <label for="outputDirectoryInput"> Select output folder: </label>
     <input type="file" id="outputDirectoryInput" webkitdirectory directory>
 
+    <!-- List of functions (top part) -->
     <h2>Functions:</h2>
     <ul id="functions-list"></ul>
-
-    <h2>Function's user test cases:</h2>
-
+    <h2>Selected:</h2>
+    
+    <!-- List of test cases for the function selected (bottom part) -->
+    <div style="display:block; width:100%; border: 1px solid #ccc; border-radius: 5px;">
+        <!-- List here -->
+        <div style="width: 50%; float: left; display: inline-block;">
+            <h2>Function's user test cases:</h2>
+            <ul id="function-test-list"></ul>
+        </div>
+        <!-- Buttons for users to use  -->
+        <div style="width: 50%; float: left; display: inline-block;">
+            <button id="addTestBtn">Add Test</button>
+            <br> <br>
+            <button id="editTestBtn">Edit Test</button>
+            <br> <br>
+            <button id="deleteTestBtn">Delete Test</button>
+        </div>
+    </div>
+    
+    
     <script src="./renderer.js"></script>>
 </body>
 </html>
