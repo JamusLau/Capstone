@@ -1,6 +1,8 @@
 const { ipcRenderer } = require('electron');
 
-const testListDiv = document.getElementById('function-test-list');
+const functionsList = document.getElementById('functions-list');
+const functionSelected = document.getElementById('function-selected');
+const functionTestList = document.getElementById('function-test-list');
 
 document.getElementById('scanButton').addEventListener('click', async () => {
     // gets the input field on the page
@@ -19,7 +21,7 @@ document.getElementById('scanButton').addEventListener('click', async () => {
     const allFiles = Array.from(inputElement.files).map(file => ({
         name: file.name,
         path: file.path,
-        webkitRelativePath: file.webkitRelativePath
+        webkitRelativePath: file.webkitRelativePath,
     }));
     console.log(allFiles);
 
@@ -29,7 +31,6 @@ document.getElementById('scanButton').addEventListener('click', async () => {
     console.log(functions);
 
     // getting the fuction list on the page
-    const functionsList = document.getElementById('functions-list');
     functionsList.innerHTML = '';
 
     // creates a div for each function detected, and adds the name, file and body of the function
@@ -46,7 +47,7 @@ document.getElementById('scanButton').addEventListener('click', async () => {
 
         // creates a pre element to store the body of the function
         const fnBody = document.createElement('pre');
-        fnBody.textContent = fn.body;
+        fnBody.textContent = fn.full;
         fnContainer.appendChild(fnBody);
 
         // creates a button element for user to select the function
@@ -58,7 +59,7 @@ document.getElementById('scanButton').addEventListener('click', async () => {
             const event = new CustomEvent('receiveTest', {
                 detail: fn
             })
-            testListDiv.dispatchEvent(event);
+            functionTestList.dispatchEvent(event);
         })
 
         fnContainer.appendChild(btn);
@@ -67,11 +68,27 @@ document.getElementById('scanButton').addEventListener('click', async () => {
     });
 });
 
-testListDiv.addEventListener('receiveTest', function(event) {
+functionTestList.addEventListener('receiveTest', function(event) {
+    // reset the selected function and test list
+    functionTestList.innerHTML = '';
+    functionSelected.innerHTML = '';
 
-    console.log("Function selected");
+    const fnContainer = document.createElement('div');
+    fnContainer.id = "function-box-div";
+    fnContainer.classList.add('function-box');
 
+    // creates a paragraph element to store the name of the function
+    const fnHead = document.createElement('p');
+    fnHead.textContent = `${event.detail.name} in ${event.detail.file}`;
+    fnContainer.appendChild(fnHead);
+
+    // creates a pre element to store the body of the function
+    const fnBody = document.createElement('pre');
+    fnBody.textContent = event.detail.full;
+    fnContainer.appendChild(fnBody);
+
+    functionSelected.appendChild(fnContainer);
+
+    // loads the tests for this function
     ipcRenderer.invoke('load-function-tests', event.detail);
-
-    
 })

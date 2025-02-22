@@ -17,19 +17,27 @@
     <input type="file" id="outputDirectoryInput" webkitdirectory directory>
 
     <!-- List of functions (top part) -->
-    <h2>Functions:</h2>
-    <ul id="functions-list"></ul>
-    <h2>Selected:</h2>
-    
+    <div style="display: flex; justify-content: flex-start; gap: 20px;";>
+        <div style="width: 50%;">
+            <h2>Functions:</h2>
+            <ul id="functions-list"></ul>
+        </div>
+        <div style="width: 50%;">
+            <h2>Selected:</h2>
+            <ul id="function-selected"></ul>
+        </div>
+    </div>
+
     <!-- List of test cases for the function selected (bottom part) -->
-    <div style="display:block; width:100%; border: 1px solid #ccc; border-radius: 5px;">
+    <div style="display:flex; justify-content: flex-start; gap: 20px;";>
         <!-- List here -->
-        <div style="width: 50%; float: left; display: inline-block;">
+        <div style="width: 50%;">
             <h2>Function's user test cases:</h2>
             <ul id="function-test-list"></ul>
         </div>
         <!-- Buttons for users to use  -->
-        <div style="width: 50%; float: left; display: inline-block;">
+        <div style="width: 50%;">
+            <br> <br> <br>
             <button id="addTestBtn">Add Test</button>
             <br> <br>
             <button id="editTestBtn">Edit Test</button>

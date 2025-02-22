@@ -15,8 +15,8 @@ let win;
 //creates a new window
 function createWindow() {
     win = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: 1600,
+        height: 900,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
@@ -62,31 +62,37 @@ function extractFunctions(files) {
             //traversing the ast tree to find the function declarations
             walk.simple(ast, {
                 FunctionDeclaration(node) {
+                    const fullfn = code.slice(node.start, node.end);
                     functions.push({
                         name: node.id.name,
                         file: filePath,
                         parameters: node.params.map(param => param.name),
-                        body: code.slice(node.body.start, node.body.end)
+                        body: code.slice(node.body.start, node.body.end),
+                        full: fullfn
                     });
                 },
                 FunctionExpression(node) {
+                    const fullfn = code.slice(node.start, node.end);
                     if (node.id) {
                         functions.push({
                             name: node.id.name,
                             file: filePath,
                             parameters: node.params.map(param => param.name),
-                            body: code.slice(node.body.start, node.body.end)
+                            body: code.slice(node.body.start, node.body.end),
+                            full: fullfn
                         });
                     }
                 },
                 ArrowFunctionExpression(node) {
                     // For arrow functions (optional)
+                    const fullfn = code.slice(node.start, node.end);
                     if (node.id) {
                         functions.push({
                             name: node.id.name,
                             file: filePath,
                             parameters: node.params.map(param => param.name),
-                            body: code.slice(node.body.start, node.body.end)
+                            body: code.slice(node.body.start, node.body.end),
+                            full: fullfn
                         });
                     }
                 }

@@ -5,7 +5,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron .",
-    "build": "electron-builder"
+    "build": "electron-builder",
+    "testmocha": "mocha --reporter mocha-junit-reporter --reporter-options mochaFile=test-results.xml"
   },
   "keywords": [],
   "author": "",
@@ -13,7 +14,9 @@
   "description": "",
   "devDependencies": {
     "electron": "^34.1.1",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^25.1.8",
+    "mocha": "^11.1.0",
+    "mocha-junit-reporter": "^2.2.1"
   },
   "dependencies": {
     "acorn": "^8.14.0",
