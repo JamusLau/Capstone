@@ -4,13 +4,17 @@
 //app - Electron module for contrlling lifecycle of the application
 //BrowserWindow - Create and manage browserwindows
 const { app, BrowserWindow, ipcMain } = require('electron');
-const fs = require('fs');
-const path = require('path');
-const acorn = require('acorn');
-const walk = require('acorn-walk');
+const { createTemplate, extractFunctions, loadTestsForFunction } = require('./assets/scripts/functions.js');
+
 
 // use to store reference of main window instance
 let win;
+
+//store reference for selected function
+var fnSelected;
+
+//store reference for test's user cases
+let fnCases = [];
 
 //creates a new window
 function createWindow() {
@@ -32,78 +36,19 @@ function createWindow() {
 }
 
 //ipc command to handle ipc calls from renderer.js
+// handler to extract functions from the files
 ipcMain.handle('get-functions', async (event, files) => {
     console.log("files received",files); 
     return extractFunctions(files);
 });
 
+// handler to load the tests for the functions
 ipcMain.handle('load-function-tests', async (event, fn) => {
     console.log("Function selected", fn);
+    fnSelected = fn;
+    console.log("Function in function store: ", fn);
+    return loadTestsForFunction(fn);
 });
-
-// function to extract functions from files
-function extractFunctions(files) {
-    const arr = Array.from(files);
-    let functions = [];
-    console.log(arr);
-
-    //loop through all files
-    arr.forEach(file => {
-        const filePath = file.webkitRelativePath;
-        console.log(filePath);
-
-        if (file.name.endsWith('.js')) {
-            //read the js file
-            const code = fs.readFileSync(filePath, 'utf8');
-
-            //parse code to use the AST using acorn
-            const ast = acorn.parse(code, {ecmaVersion: 2020});
-
-            //traversing the ast tree to find the function declarations
-            walk.simple(ast, {
-                FunctionDeclaration(node) {
-                    const fullfn = code.slice(node.start, node.end);
-                    functions.push({
-                        name: node.id.name,
-                        file: filePath,
-                        parameters: node.params.map(param => param.name),
-                        body: code.slice(node.body.start, node.body.end),
-                        full: fullfn
-                    });
-                },
-                FunctionExpression(node) {
-                    const fullfn = code.slice(node.start, node.end);
-                    if (node.id) {
-                        functions.push({
-                            name: node.id.name,
-                            file: filePath,
-                            parameters: node.params.map(param => param.name),
-                            body: code.slice(node.body.start, node.body.end),
-                            full: fullfn
-                        });
-                    }
-                },
-                ArrowFunctionExpression(node) {
-                    // For arrow functions (optional)
-                    const fullfn = code.slice(node.start, node.end);
-                    if (node.id) {
-                        functions.push({
-                            name: node.id.name,
-                            file: filePath,
-                            parameters: node.params.map(param => param.name),
-                            body: code.slice(node.body.start, node.body.end),
-                            full: fullfn
-                        });
-                    }
-                }
-            })
-        }
-    })
-
-    console.log(functions);
-    return functions;
-}
-
 
 //checks when Electron has finished loading, then runs the function
 app.whenReady().then(createWindow);

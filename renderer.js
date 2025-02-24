@@ -68,7 +68,7 @@ document.getElementById('scanButton').addEventListener('click', async () => {
     });
 });
 
-functionTestList.addEventListener('receiveTest', function(event) {
+functionTestList.addEventListener('receiveTest', async function(event) {
     // reset the selected function and test list
     functionTestList.innerHTML = '';
     functionSelected.innerHTML = '';
@@ -90,5 +90,5 @@ functionTestList.addEventListener('receiveTest', function(event) {
     functionSelected.appendChild(fnContainer);
 
     // loads the tests for this function
-    ipcRenderer.invoke('load-function-tests', event.detail);
+    const tests = await ipcRenderer.invoke('load-function-tests', event.detail);
 })

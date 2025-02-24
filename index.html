@@ -38,11 +38,20 @@
         <!-- Buttons for users to use  -->
         <div style="width: 50%;">
             <br> <br> <br>
+            <h3>Options:</h3>
             <button id="addTestBtn">Add Test</button>
-            <br> <br>
             <button id="editTestBtn">Edit Test</button>
-            <br> <br>
             <button id="deleteTestBtn">Delete Test</button>
+            <button id="generateTestBtn">Generate Tests</button>
+            <br><br>
+            <input type="checkbox" id="isMutationBased" name="isMutationBased" value="Mutation">
+            <label for="isMutationBased">Is Mutation</label><br>
+            <input type="checkbox" id="isGenerationBased" name="isGenerationBased" value="Generation">
+            <label for="isGenerationBased">Is Generation</label><br>
+            <input type="checkbox" id="isCoverageBased" name="isCoverageBased" value="Coverage">
+            <label for="isCoverageBased">Is Coverage</label><br>
+            <h3>Creator:</h3>
+            <ul id="test-creator"></ul>
         </div>
     </div>
     
