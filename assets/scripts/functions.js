@@ -70,9 +70,23 @@ function extractFunctions(files) {
 
 // fnObject parameters can be directly accessed
 // name, file, parameters, body, full (function)
+// describe('add()', () => {
+//     it('Description of add', () => {
+//         const result = add(1, 2);
+//         expect(result).to.equal(3);  // Use Chai's expect() syntax
+//     });
+// });
 function createTemplate(fnObject)
 {
-    console.log("Name in createTemplate: ", fnObject.name);
+    const template = `
+    describe('${fnObject.name}()', () => {
+        it('Description of ${fnObject.name}', () => {
+            const result = ${fnObject.name}(${fnObject.parameters});
+            expect(result).to.equal(3);  // Use Chai's expect() syntax
+        });
+    });`
+
+    return template;
 }
 
 function loadTestsForFunction(fnObject)

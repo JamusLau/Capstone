@@ -4,6 +4,43 @@ const functionsList = document.getElementById('functions-list');
 const functionSelected = document.getElementById('function-selected');
 const functionTestList = document.getElementById('function-test-list');
 
+// function to show the creator box and button
+async function showCreator() {
+    var x = document.getElementById("test-creator-box");
+    var y = document.getElementById("confirmAddTestBtn");
+    if (x.style.display === "none") {
+        x.style.display = "block";
+    }
+
+    if (y.style.display === "none") {
+        y.style.display = "block";
+    }
+
+    const fnObject = await ipcRenderer.invoke('get-selected-function');
+    console.log("show creator:", fnObject);
+    const template = `
+    describe('${fnObject.name}()', () => {
+        it('Description of ${fnObject.name}', () => {
+            const result = ${fnObject.name}(${fnObject.parameters});
+            expect(result).to.equal(3);  // Use Chai's expect() syntax
+        });
+    });`
+    x.value = template;
+}
+
+function hideCreator() {
+    var x = document.getElementById("test-creator-box");
+    var y = document.getElementById("confirmAddTestBtn");
+    if (x.style.display === "block") {
+        x.style.display = "none";
+    }
+
+    if (y.style.display === "block") {
+        y.style.display = "none";
+    }
+}
+
+// add listener to the scan button to scan the set filepath for all js files and functions
 document.getElementById('scanButton').addEventListener('click', async () => {
     // gets the input field on the page
     const inputElement = document.getElementById('inputDirectoryInput');
@@ -68,6 +105,8 @@ document.getElementById('scanButton').addEventListener('click', async () => {
     });
 });
 
+// adds listener to the selectedFunction div to receive the function selected by the user
+// also to retrive the tests for that function from the map in the main process
 functionTestList.addEventListener('receiveTest', async function(event) {
     // reset the selected function and test list
     functionTestList.innerHTML = '';
@@ -92,3 +131,8 @@ functionTestList.addEventListener('receiveTest', async function(event) {
     // loads the tests for this function
     const tests = await ipcRenderer.invoke('load-function-tests', event.detail);
 })
+
+// adds listener to the confirm add test button to add the test from the creator into the map
+document.getElementById('confirmAddTestBtn').addEventListener('click', async () => {
+    hideCreator();
+});

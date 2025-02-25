@@ -13,8 +13,16 @@ let win;
 //store reference for selected function
 var fnSelected;
 
-//store reference for test's user cases
-let fnCases = [];
+// store reference for test's user cases for each function
+// eachFn should have an array of test objects
+class FunctionTest {
+    constructor(fnSignature, fnBody) {
+        this.fnSignature = fnSignature;
+        this.fnBody = fnBody;
+    }
+}
+// fnCasesMap.set("signature", FunctionTest object)
+const fnCasesMap = new Map();
 
 //creates a new window
 function createWindow() {
@@ -42,11 +50,17 @@ ipcMain.handle('get-functions', async (event, files) => {
     return extractFunctions(files);
 });
 
+//ipc command to get currently selected function
+ipcMain.handle('get-selected-function', async (event) => {
+    return fnSelected;
+});
+
 // handler to load the tests for the functions
+// return the list of test cases from the map with the matching signature
 ipcMain.handle('load-function-tests', async (event, fn) => {
     console.log("Function selected", fn);
     fnSelected = fn;
-    console.log("Function in function store: ", fn);
+    console.log("Function in function store: ", fnSelected);
     return loadTestsForFunction(fn);
 });
 

@@ -39,8 +39,7 @@
         <div style="width: 50%;">
             <br> <br> <br>
             <h3>Options:</h3>
-            <button id="addTestBtn">Add Test</button>
-            <button id="editTestBtn">Edit Test</button>
+            <button id="addTestBtn" onClick="showCreator()">Add Test</button>
             <button id="deleteTestBtn">Delete Test</button>
             <button id="generateTestBtn">Generate Tests</button>
             <br><br>
@@ -52,6 +51,8 @@
             <label for="isCoverageBased">Is Coverage</label><br>
             <h3>Creator:</h3>
             <ul id="test-creator"></ul>
+            <textarea id="test-creator-box" rows="15" cols="80" style="display:none"></textarea> <br>
+            <button id="confirmAddTestBtn" style="display:none">Add</button>
         </div>
     </div>
     
