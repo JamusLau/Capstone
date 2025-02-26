@@ -4,8 +4,8 @@
 //app - Electron module for contrlling lifecycle of the application
 //BrowserWindow - Create and manage browserwindows
 const { app, BrowserWindow, ipcMain } = require('electron');
-const { createTemplate, extractFunctions, loadTestsForFunction } = require('./assets/scripts/functions.js');
-
+const { createTemplate, extractFunctions } = require('./assets/scripts/functions.js');
+const fs = require('fs');
 
 // use to store reference of main window instance
 let win;
@@ -55,14 +55,40 @@ ipcMain.handle('get-selected-function', async (event) => {
     return fnSelected;
 });
 
-// handler to load the tests for the functions
-// return the list of test cases from the map with the matching signature
-ipcMain.handle('load-function-tests', async (event, fn) => {
-    console.log("Function selected", fn);
+//stores a test created for a function
+ipcMain.handle('store-function-test', async (event, fnSignature, fnBody) => {
+    const obj = new FunctionTest(fnSignature, fnBody);
+    if (!fnCasesMap.has(fnSignature)) {
+        fnCasesMap.set(fnSignature, new Set([obj]));
+    }
+    else {
+        fnCasesMap.get(fnSignature).add(obj);
+    }
+    // const obj = new FunctionTest(fnSignature, fnBody);
+    // fnCasesMap.set(fnSignature, obj);
+    console.log("Function test stored: ", obj);
+})
+
+//set the selected function
+ipcMain.handle('set-selected-function', async (event, fn) => {
     fnSelected = fn;
-    console.log("Function in function store: ", fnSelected);
-    return loadTestsForFunction(fn);
-});
+    console.log("Function selected: ", fnSelected);
+})
+
+// get all tests from the map matching the signature
+ipcMain.handle('get-tests-for-function', async (event, fnSignature) => {
+    console.log("Function signature received: ", fnSignature);
+    console.log("Function test found: ", fnCasesMap.get(fnSignature));
+    return fnCasesMap.get(fnSignature);
+})
+
+ipcMain.handle('save-tests-to-file', async (event, outputFilePath) => {
+
+})
+
+ipcMain.handle('load-tests-from-file', async (event, inputFilePath) => {
+    
+})
 
 //checks when Electron has finished loading, then runs the function
 app.whenReady().then(createWindow);

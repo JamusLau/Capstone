@@ -22,7 +22,7 @@ async function showCreator() {
     describe('${fnObject.name}()', () => {
         it('Description of ${fnObject.name}', () => {
             const result = ${fnObject.name}(${fnObject.parameters});
-            expect(result).to.equal(3);  // Use Chai's expect() syntax
+            expect(result).to.equal(value);  // Use Chai's expect() syntax
         });
     });`
     x.value = template;
@@ -57,7 +57,7 @@ document.getElementById('scanButton').addEventListener('click', async () => {
     // maps the files to an array of objects with the name, path, and webkitRelativePath
     const allFiles = Array.from(inputElement.files).map(file => ({
         name: file.name,
-        path: file.path,
+        path: __dirname + "\\" + file.webkitRelativePath,
         webkitRelativePath: file.webkitRelativePath,
     }));
     console.log(allFiles);
@@ -71,6 +71,7 @@ document.getElementById('scanButton').addEventListener('click', async () => {
     functionsList.innerHTML = '';
 
     // creates a div for each function detected, and adds the name, file and body of the function
+    // each (fn) contains => name, file, parameters, body, full
     functions.forEach(fn => {
         // creates the div and adds a class to it to store each function
         const fnContainer = document.createElement('div');
@@ -94,7 +95,7 @@ document.getElementById('scanButton').addEventListener('click', async () => {
         btn.textContent = "Select";
         btn.addEventListener('click', async () => {
             const event = new CustomEvent('receiveTest', {
-                detail: fn
+                detail: fn //sends the function over to the functionTestList
             })
             functionTestList.dispatchEvent(event);
         })
@@ -107,9 +108,10 @@ document.getElementById('scanButton').addEventListener('click', async () => {
 
 // adds listener to the selectedFunction div to receive the function selected by the user
 // also to retrive the tests for that function from the map in the main process
+// (event) will contain the details of the received function
+// (event) contains (detail)(fn) => name, file, parameters, body, full
 functionTestList.addEventListener('receiveTest', async function(event) {
     // reset the selected function and test list
-    functionTestList.innerHTML = '';
     functionSelected.innerHTML = '';
 
     const fnContainer = document.createElement('div');
@@ -128,11 +130,59 @@ functionTestList.addEventListener('receiveTest', async function(event) {
 
     functionSelected.appendChild(fnContainer);
 
-    // loads the tests for this function
-    const tests = await ipcRenderer.invoke('load-function-tests', event.detail);
+    // set the currently selected function in main
+    await ipcRenderer.invoke('set-selected-function', event.detail);
+
+    const newEvent = new CustomEvent('updateTestList', {
+        detail: event.detail
+    })
+    functionTestList.dispatchEvent(newEvent);
+
 })
 
 // adds listener to the confirm add test button to add the test from the creator into the map
 document.getElementById('confirmAddTestBtn').addEventListener('click', async () => {
+    // hides the creator box
     hideCreator();
+    // gets the body from the text box
+    const userTest = document.getElementById('test-creator-box').value;
+    // gets the currently selected function
+    const selected = await ipcRenderer.invoke('get-selected-function');
+    // creates a signature for the function
+    const signature = selected.name + "@" + selected.file;
+    // stores the function using the signature and the body
+    await ipcRenderer.invoke('store-function-test', signature, userTest);
+
+    //event to update the list
+    const event = new CustomEvent('updateTestList', {
+        detail: selected
+    })
+    //updates the list of tests
+    functionTestList.dispatchEvent(event);
 });
+
+// adds listener to the function test list to update
+// (event) will contain the details of the received function
+// (event) contains (detail)(fn) => name, file, parameters, body, full
+functionTestList.addEventListener('updateTestList', async function(event) {
+    //reset the function test list
+    functionTestList.innerHTML = '';
+
+    // grabs all the selected function's tests from the map (if any)
+    const tests = await ipcRenderer.invoke('get-tests-for-function', event.detail.name + "@" + event.detail.file);
+    const arrTests = Array.from(tests);
+    
+    // creates a div and box containing each test created for the function
+    arrTests.forEach(test => {
+        const testContainer = document.createElement('div');
+        testContainer.id = "test-box-div";
+        testContainer.classList.add('test-box');
+        
+        const testBody = document.createElement('pre');
+        console.log("update body: ", test.fnBody);
+        testBody.textContent = test.fnBody;
+        testContainer.appendChild(testBody);
+
+        functionTestList.appendChild(testContainer);
+    })
+})

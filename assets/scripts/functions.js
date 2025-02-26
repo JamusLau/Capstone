@@ -3,7 +3,7 @@ const path = require('path');
 const acorn = require('acorn');
 const walk = require('acorn-walk');
 
-module.exports = { createTemplate, extractFunctions, loadTestsForFunction }
+module.exports = { createTemplate, extractFunctions }
 
 // function to extract functions from files
 function extractFunctions(files) {
@@ -87,9 +87,4 @@ function createTemplate(fnObject)
     });`
 
     return template;
-}
-
-function loadTestsForFunction(fnObject)
-{
-
 }

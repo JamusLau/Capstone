@@ -7,14 +7,9 @@
     <link rel="stylesheet" href="./assets/styles.css">
 </head>
 <body>
-    <label for="directoryInput"> Select input folder: </label>
-
+    <label for="directoryInput"> Select input folder (for JS Scripts): </label>
     <input type="file" id="inputDirectoryInput" webkitdirectory directory>
     <button id="scanButton">Scan</button>
-    <br>
-    <br>
-    <label for="outputDirectoryInput"> Select output folder: </label>
-    <input type="file" id="outputDirectoryInput" webkitdirectory directory>
 
     <!-- List of functions (top part) -->
     <div style="display: flex; justify-content: flex-start; gap: 20px;";>
@@ -42,6 +37,9 @@
             <button id="addTestBtn" onClick="showCreator()">Add Test</button>
             <button id="deleteTestBtn">Delete Test</button>
             <button id="generateTestBtn">Generate Tests</button>
+            <br> <br>
+            <label for="testFileInput"> Select test file to load: </label>
+            <input type="file" id="testFileInput" accept=".js">
             <br><br>
             <input type="checkbox" id="isMutationBased" name="isMutationBased" value="Mutation">
             <label for="isMutationBased">Is Mutation</label><br>
