@@ -78,13 +78,13 @@ function extractFunctions(files) {
 // });
 function createTemplate(fnObject)
 {
-    const template = `
-    describe('${fnObject.name}()', () => {
-        it('Description of ${fnObject.name}', () => {
-            const result = ${fnObject.name}(${fnObject.parameters});
-            expect(result).to.equal(3);  // Use Chai's expect() syntax
-        });
-    });`
+    const template =  
+`describe('${fnObject.name}()', () => {
+    it('Description of ${fnObject.name}', () => {
+        const result = ${fnObject.name}(${fnObject.parameters});
+        expect(result).to.equal(3);  // Use Chai's expect() syntax
+    });
+});`
 
     return template;
 }

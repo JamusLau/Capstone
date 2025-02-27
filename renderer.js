@@ -3,6 +3,7 @@ const { ipcRenderer } = require('electron');
 const functionsList = document.getElementById('functions-list');
 const functionSelected = document.getElementById('function-selected');
 const functionTestList = document.getElementById('function-test-list');
+const { createTemplate } = require('./assets/scripts/functions.js');
 
 // function to show the creator box and button
 async function showCreator() {
@@ -18,16 +19,11 @@ async function showCreator() {
 
     const fnObject = await ipcRenderer.invoke('get-selected-function');
     console.log("show creator:", fnObject);
-    const template = `
-    describe('${fnObject.name}()', () => {
-        it('Description of ${fnObject.name}', () => {
-            const result = ${fnObject.name}(${fnObject.parameters});
-            expect(result).to.equal(value);  // Use Chai's expect() syntax
-        });
-    });`
+    const template = createTemplate(fnObject);
     x.value = template;
 }
 
+// function to hide the creator box and button
 function hideCreator() {
     var x = document.getElementById("test-creator-box");
     var y = document.getElementById("confirmAddTestBtn");
@@ -40,7 +36,7 @@ function hideCreator() {
     }
 }
 
-// add listener to the scan button to scan the set filepath for all js files and functions
+// Add listener to the scan button to scan the set filepath for all js files and functions
 document.getElementById('scanButton').addEventListener('click', async () => {
     // gets the input field on the page
     const inputElement = document.getElementById('inputDirectoryInput');
@@ -106,12 +102,12 @@ document.getElementById('scanButton').addEventListener('click', async () => {
     });
 });
 
-// adds listener to the selectedFunction div to receive the function selected by the user
-// also to retrive the tests for that function from the map in the main process
+// Adds listener to the functionTestList div to receive the function selected by the user
+// Also to retrive the tests for that function from the map in the main process
 // (event) will contain the details of the received function
 // (event) contains (detail)(fn) => name, file, parameters, body, full
 functionTestList.addEventListener('receiveTest', async function(event) {
-    // reset the selected function and test list
+    // reset the selected function
     functionSelected.innerHTML = '';
 
     const fnContainer = document.createElement('div');
@@ -133,6 +129,7 @@ functionTestList.addEventListener('receiveTest', async function(event) {
     // set the currently selected function in main
     await ipcRenderer.invoke('set-selected-function', event.detail);
 
+    //updates and retrives all user tests created for the selected function
     const newEvent = new CustomEvent('updateTestList', {
         detail: event.detail
     })
@@ -140,28 +137,7 @@ functionTestList.addEventListener('receiveTest', async function(event) {
 
 })
 
-// adds listener to the confirm add test button to add the test from the creator into the map
-document.getElementById('confirmAddTestBtn').addEventListener('click', async () => {
-    // hides the creator box
-    hideCreator();
-    // gets the body from the text box
-    const userTest = document.getElementById('test-creator-box').value;
-    // gets the currently selected function
-    const selected = await ipcRenderer.invoke('get-selected-function');
-    // creates a signature for the function
-    const signature = selected.name + "@" + selected.file;
-    // stores the function using the signature and the body
-    await ipcRenderer.invoke('store-function-test', signature, userTest);
-
-    //event to update the list
-    const event = new CustomEvent('updateTestList', {
-        detail: selected
-    })
-    //updates the list of tests
-    functionTestList.dispatchEvent(event);
-});
-
-// adds listener to the function test list to update
+// Adds listener to the function test list to update
 // (event) will contain the details of the received function
 // (event) contains (detail)(fn) => name, file, parameters, body, full
 functionTestList.addEventListener('updateTestList', async function(event) {
@@ -185,4 +161,60 @@ functionTestList.addEventListener('updateTestList', async function(event) {
 
         functionTestList.appendChild(testContainer);
     })
+})
+
+// Adds listener to the confirm add test button to add the test from the creator into the map
+document.getElementById('confirmAddTestBtn').addEventListener('click', async () => {
+    // hides the creator box
+    hideCreator();
+    // gets the body from the text box
+    const userTest = document.getElementById('test-creator-box').value;
+    // gets the currently selected function
+    const selected = await ipcRenderer.invoke('get-selected-function');
+    // creates a signature for the function
+    const signature = selected.name + "@" + selected.file;
+    // stores the function using the signature and the body
+    await ipcRenderer.invoke('store-function-test', signature, userTest);
+
+    //event to update the list
+    const event = new CustomEvent('updateTestList', {
+        detail: selected
+    })
+    //updates the list of tests
+    functionTestList.dispatchEvent(event);
+});
+
+// Adds listener to the button to save the user tests to a file
+document.getElementById("saveUserTestsBtn").addEventListener('click', async () => {
+    // gets the user file name input
+    var fileName = document.getElementById('userTestFileName').value;
+    //if empty sets default
+    if (fileName == "" || fileName == null) {
+        fileName = "UserTests";
+    }
+    //invoke function to save tests to file
+    ipcRenderer.invoke('save-tests-to-file', "./test/" + fileName + ".js");
+})
+
+// Adds listener to check any change to file input for user tests
+document.getElementById("testFileInput").addEventListener('onChange', async () => {
+
+})
+
+// adds listener to the button to generate and save tests
+document.getElementById("generateTestBtn").addEventListener('click', async () => {
+    //gets the file name from input
+    var fileName = document.getElementById('generatedTestFileName').value;
+    //gets the count from input
+    var count = document.getElementById('generationCount').value;
+    //sets default if file name is empty
+    if (fileName == "" || fileName == null) {
+        fileName = "GeneratedTests";
+    }
+    //sets default if count is empty
+    if (count == "" || count == null) {
+        count = 0;
+    }
+    //invoke function to generate and save tests to file
+    ipcRenderer.invoke('generate-and-save-tests', "./test/" + fileName + ".js", count);
 })

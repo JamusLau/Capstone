@@ -31,26 +31,44 @@
             <ul id="function-test-list"></ul>
         </div>
         <!-- Buttons for users to use  -->
-        <div style="width: 50%;">
-            <br> <br> <br>
-            <h3>Options:</h3>
-            <button id="addTestBtn" onClick="showCreator()">Add Test</button>
-            <button id="deleteTestBtn">Delete Test</button>
-            <button id="generateTestBtn">Generate Tests</button>
-            <br> <br>
-            <label for="testFileInput"> Select test file to load: </label>
-            <input type="file" id="testFileInput" accept=".js">
-            <br><br>
+        <div style="width: 50%; line-height: 0.5em;">
+            <br>
+            <h2>Options:</h2>
+            <!-- Generator Stuff -->
+            <h3>Generator:</h3>
+                <!-- Generate file name and button -->
+            <label for="generatedTestFileName">Generated Test File Name:</label> 
+            <input type="text" id="generatedTestFileName" placeholder="Test File Name">
+            <button id="generateTestBtn">Generate Tests</button> <br> <br>
+                <!-- Generate count -->
+            <label for="generationCount">Number of cases generated per function:</label>
+            <input type="number" id="generationCount" style="max-width: 50px;"><br>
+                <!-- Generation options checkboxes -->
             <input type="checkbox" id="isMutationBased" name="isMutationBased" value="Mutation">
-            <label for="isMutationBased">Is Mutation</label><br>
+            <label for="isMutationBased">Is Mutation</label> <br>
             <input type="checkbox" id="isGenerationBased" name="isGenerationBased" value="Generation">
-            <label for="isGenerationBased">Is Generation</label><br>
+            <label for="isGenerationBased">Is Generation</label> <br>
             <input type="checkbox" id="isCoverageBased" name="isCoverageBased" value="Coverage">
             <label for="isCoverageBased">Is Coverage</label><br>
+            <!-- ----------------------------------------------- -->
+            <!-- Creator Stuff -->
             <h3>Creator:</h3>
+                <!-- Buttons to add / delete -->
+            <button id="addTestBtn" onClick="showCreator()">Add Test</button>
+            <button id="deleteTestBtn">Delete Test</button>
+            <br> <br>
+                <!-- Loading of user test file -->
+            <label for="testFileInput"> Select user test file to load: </label>
+            <input type="file" id="testFileInput" accept=".js"> <br> <br>
+                <!-- Saving of user test file -->
+            <label for="userTestFileName">User Test File Name:</label>
+            <input type="text" id="userTestFileName" placeholder="Test File Name">
+            <button id="saveUserTestsBtn">Save User Tests</button>
+                <!-- Creator stuff -->
             <ul id="test-creator"></ul>
             <textarea id="test-creator-box" rows="15" cols="80" style="display:none"></textarea> <br>
             <button id="confirmAddTestBtn" style="display:none">Add</button>
+            <!-- ---------------------------------------------- -->
         </div>
     </div>
     

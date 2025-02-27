@@ -10,7 +10,7 @@ const fs = require('fs');
 // use to store reference of main window instance
 let win;
 
-//store reference for selected function
+//store reference for currently selected function
 var fnSelected;
 
 // store reference for test's user cases for each function
@@ -21,7 +21,9 @@ class FunctionTest {
         this.fnBody = fnBody;
     }
 }
-// fnCasesMap.set("signature", FunctionTest object)
+
+// Saves all the created test cases for each function
+// Format: Map<functionSignature, Set<FunctionTest>>
 const fnCasesMap = new Map();
 
 //creates a new window
@@ -43,19 +45,28 @@ function createWindow() {
     });
 }
 
-//ipc command to handle ipc calls from renderer.js
-// handler to extract functions from the files
+// [IPCHandler]
+// [Description] Handler to extract functions from the files
+// [Parameters] files - Array of files to extract functions from
+// [Returns] Array of functions extracted from the files
 ipcMain.handle('get-functions', async (event, files) => {
     console.log("files received",files); 
-    return extractFunctions(files);
+    return extractFunctions(files); // function in functions.js
 });
 
-//ipc command to get currently selected function
+// [IPCHandler]
+// [Description] Handler to get currently selected function
+// [Returns] Currently selected function (fnSelected)
 ipcMain.handle('get-selected-function', async (event) => {
     return fnSelected;
 });
 
-//stores a test created for a function
+// [IPCHandler]
+// [Description] Stores a test created for a function in fnCasesMap
+// [Parameters] fnSignature - Signature of the function the test is for
+//              fnSignature - (selected.name + "@" + selected.file)
+//              fnBody - Body of the test function
+// [Returns] None
 ipcMain.handle('store-function-test', async (event, fnSignature, fnBody) => {
     const obj = new FunctionTest(fnSignature, fnBody);
     if (!fnCasesMap.has(fnSignature)) {
@@ -69,25 +80,57 @@ ipcMain.handle('store-function-test', async (event, fnSignature, fnBody) => {
     console.log("Function test stored: ", obj);
 })
 
-//set the selected function
+// [IPCHandler]
+// [Description] Sets the currently selected function
+// [Parameters] fn - Function to set as selected
+// [Returns] None
 ipcMain.handle('set-selected-function', async (event, fn) => {
     fnSelected = fn;
     console.log("Function selected: ", fnSelected);
 })
 
-// get all tests from the map matching the signature
+// [IPCHandler]
+// [Description] Retrieves all tests for a function from fnCasesMap
+// [Parameters] fnSignature - Signature of the function to get tests for
+//              fnSignature - (selected.name + "@" + selected.file)
+// [Returns] Array of tests for the function
 ipcMain.handle('get-tests-for-function', async (event, fnSignature) => {
     console.log("Function signature received: ", fnSignature);
     console.log("Function test found: ", fnCasesMap.get(fnSignature));
     return fnCasesMap.get(fnSignature);
 })
 
+// [IPCHandler]
+// [Description] Saves all tests in fnCasesMap to a file
+// [Parameters] outputFilePath - Path to save the file to
+// [Returns] None
 ipcMain.handle('save-tests-to-file', async (event, outputFilePath) => {
-
+    let data = '';
+    fnCasesMap.forEach((value, key) => {
+        value.forEach(test => {
+            data += `//Test for: ${key}\n`;
+            data += `${test.fnBody}\n\n`;
+        })
+    })
+    fs.writeFileSync(outputFilePath, data, 'utf8');
+    console.log("User tests saved to: ", outputFilePath);
 })
 
+// [IPCHandler]
+// [Description] Loads tests from a file to fnCasesMap
+// [Parameters] inputFilePath - Path to the file to load tests from
+// [Returns] None
 ipcMain.handle('load-tests-from-file', async (event, inputFilePath) => {
-    
+    fnCasesMap.clear();
+})
+
+// [IPCHandler]
+// [Description] Generates tests and saves them to a file
+// [Parameters] outputFilePath - Path to save the file to
+//              count - Number of tests to generate
+// [Returns] None
+ipcMain.handle('generate-and-save-tests', async (event, outputFilePath, count) => {
+    console.log("Generate tests @" + outputFilePath + " count: " + count);  
 })
 
 //checks when Electron has finished loading, then runs the function
