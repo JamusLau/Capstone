@@ -120,8 +120,29 @@ ipcMain.handle('save-tests-to-file', async (event, outputFilePath) => {
 // [Description] Loads tests from a file to fnCasesMap
 // [Parameters] inputFilePath - Path to the file to load tests from
 // [Returns] None
-ipcMain.handle('load-tests-from-file', async (event, inputFilePath) => {
+ipcMain.handle('load-tests-from-file', async (event, fileContent) => {
     fnCasesMap.clear();
+
+    const regex = /(\w+@\S+\/\S+)\s*describe\(([^)]+)\s*,\s*\(\)\s*=>\s*{([\s\S]+?)\}\);/g
+
+    const match = regex.exec(fileContent);
+    if (match)
+    {
+        const fnSignature = match[1]; // The part after "//Test for:"
+        const fnBody = match[0]; // The whole test block including the closing brackets
+
+        console.log("key", fnSignature);
+        console.log("body", fnBody);
+
+        const obj = new FunctionTest(fnSignature, fnBody);
+
+        if (!fnCasesMap.has(fnSignature)) {
+            fnCasesMap.set(fnSignature, new Set([obj]));
+        }
+        else {
+            fnCasesMap.get(fnSignature).add(obj);
+        }
+    }
 })
 
 // [IPCHandler]

@@ -197,11 +197,28 @@ document.getElementById("saveUserTestsBtn").addEventListener('click', async () =
 })
 
 // Adds listener to check any change to file input for user tests
-document.getElementById("testFileInput").addEventListener('onChange', async () => {
+document.getElementById("testFileInput").addEventListener('change', async () => {
+    //gets the file and stores the file content
+    const fileInput = document.getElementById("testFileInput");
+    const file = fileInput.files[0];
 
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = async function(event) {
+            const fileContent = event.target.result;
+            await ipcRenderer.invoke('load-tests-from-file', fileContent);
+        };
+
+        reader.onerror = function(error) {
+            console.error('Error reading file: ', error);
+        };
+
+        reader.readAsText(file, 'UTF-8');
+    }
 })
 
-// adds listener to the button to generate and save tests
+// Adds listener to the button to generate and save tests
 document.getElementById("generateTestBtn").addEventListener('click', async () => {
     //gets the file name from input
     var fileName = document.getElementById('generatedTestFileName').value;
