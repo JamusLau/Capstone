@@ -14,12 +14,14 @@
     <!-- List of functions (top part) -->
     <div style="display: flex; justify-content: flex-start; gap: 20px;";>
         <div style="width: 50%;">
-            <h2>Functions:</h2>
+            <h2>Functions Detected:</h2>
             <ul id="functions-list"></ul>
         </div>
         <div style="width: 50%;">
-            <h2>Selected:</h2>
+            <h2>Currently selected Function:</h2>
             <ul id="function-selected"></ul>
+            <h2>Test selected for Delete:</h2>
+            <ul id="test-selected-delete"></ul>
         </div>
     </div>
 
@@ -35,7 +37,7 @@
             <br>
             <h2>Options:</h2>
             <!-- Generator Stuff -->
-            <h3>Generator:</h3>
+            <h3>Test Generator:</h3>
                 <!-- Generate file name and button -->
             <label for="generatedTestFileName">Generated Test File Name:</label> 
             <input type="text" id="generatedTestFileName" placeholder="Test File Name">
@@ -52,7 +54,7 @@
             <label for="isCoverageBased">Is Coverage</label><br>
             <!-- ----------------------------------------------- -->
             <!-- Creator Stuff -->
-            <h3>Creator:</h3>
+            <h3>Test Creator:</h3>
                 <!-- Buttons to add / delete -->
             <button id="addTestBtn" onClick="showCreator()">Add Test</button>
             <button id="deleteTestBtn">Delete Test</button>

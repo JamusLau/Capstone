@@ -12,13 +12,15 @@ let win;
 
 //store reference for currently selected function
 var fnSelected;
+//store reference for currently selected test to delete
+var testSelectedDelete;
 
 // store reference for test's user cases for each function
 // eachFn should have an array of test objects
 class FunctionTest {
-    constructor(fnSignature, fnBody) {
+    constructor(fnSignature, fnTestBody) {
         this.fnSignature = fnSignature;
-        this.fnBody = fnBody;
+        this.fnTestBody = fnTestBody;
     }
 }
 
@@ -65,17 +67,17 @@ ipcMain.handle('get-selected-function', async (event) => {
 // [Description] Stores a test created for a function in fnCasesMap
 // [Parameters] fnSignature - Signature of the function the test is for
 //              fnSignature - (selected.name + "@" + selected.file)
-//              fnBody - Body of the test function
+//              fnTestBody - Body of the test function
 // [Returns] None
-ipcMain.handle('store-function-test', async (event, fnSignature, fnBody) => {
-    const obj = new FunctionTest(fnSignature, fnBody);
+ipcMain.handle('store-function-test', async (event, fnSignature, fnTestBody) => {
+    const obj = new FunctionTest(fnSignature, fnTestBody);
     if (!fnCasesMap.has(fnSignature)) {
         fnCasesMap.set(fnSignature, new Set([obj]));
     }
     else {
         fnCasesMap.get(fnSignature).add(obj);
     }
-    // const obj = new FunctionTest(fnSignature, fnBody);
+    // const obj = new FunctionTest(fnSignature, fnTestBody);
     // fnCasesMap.set(fnSignature, obj);
     console.log("Function test stored: ", obj);
 })
@@ -87,6 +89,28 @@ ipcMain.handle('store-function-test', async (event, fnSignature, fnBody) => {
 ipcMain.handle('set-selected-function', async (event, fn) => {
     fnSelected = fn;
     console.log("Function selected: ", fnSelected);
+})
+
+// [IPCHandler]
+// [Description] Sets the currently selected test to delete
+// [Parameters] functionTest - Test (object) to set as selected to delete
+// [Returns] None
+ipcMain.handle('set-selected-test-delete', async(event, functionTest) => {
+    testSelectedDelete = functionTest;
+    console.log("Test selected to delete: ", testSelectedDelete);
+})
+
+// [IPCHandler]
+// [Description] Deletes the currently selected test
+// [Parameters] None
+// [Returns] None
+ipcMain.handle('delete-selected-test', async(event) => {
+    fnCasesMap.get(testSelectedDelete.fnSignature).forEach(test => {
+        if (test.fnTestBody === testSelectedDelete.fnTestBody) {
+            fnCasesMap.get(testSelectedDelete.fnSignature).delete(test);
+        }
+    })
+    console.log("Test deleted: ", testSelectedDelete);
 })
 
 // [IPCHandler]
@@ -109,7 +133,7 @@ ipcMain.handle('save-tests-to-file', async (event, outputFilePath) => {
     fnCasesMap.forEach((value, key) => {
         value.forEach(test => {
             data += `//Test for: ${key}\n`;
-            data += `${test.fnBody}\n\n`;
+            data += `${test.fnTestBody}\n\n`;
         })
     })
     fs.writeFileSync(outputFilePath, data, 'utf8');
@@ -121,28 +145,61 @@ ipcMain.handle('save-tests-to-file', async (event, outputFilePath) => {
 // [Parameters] inputFilePath - Path to the file to load tests from
 // [Returns] None
 ipcMain.handle('load-tests-from-file', async (event, fileContent) => {
+    
     fnCasesMap.clear();
 
-    const regex = /(\w+@\S+\/\S+)\s*describe\(([^)]+)\s*,\s*\(\)\s*=>\s*{([\s\S]+?)\}\);/g
+    const lines = fileContent.split('\n');
+    let testSig = ''; // to store the signature for the test
+    let testBody = ''; // to store the body for the test
 
-    const match = regex.exec(fileContent);
-    if (match)
-    {
-        const fnSignature = match[1]; // The part after "//Test for:"
-        const fnBody = match[0]; // The whole test block including the closing brackets
+    // variables to keep track whether still in body
+    let isInBody = false; // check whether still in body of test
+    let testBodyParts = []; // to store parts of the body
+    let braceCounter = 0; // to keep track of braces
 
-        console.log("key", fnSignature);
-        console.log("body", fnBody);
+    lines.forEach(line => {
+        // capture the signature of the test
+        if (line.startsWith('//Test for:')) {
+            if (testSig) {
+                testBody = '';
+                testBodyParts = [];
+            }
+            testSig = line.replace('//Test for:', '').trim();
+        } else if (line.startsWith('describe(')) { //capture the body
+            isInBody = true; 
+            testBodyParts.push(line); // push the line that is in the body into the parts
+            braceCounter += (line.match(/\(/g) || []).length - (line.match(/\)/g) || []).length; // check brace
+        } else if (isInBody) { // if still in body, continue capture
+            testBodyParts.push(line); // push the line that is in the body into the parts
+            braceCounter += (line.match(/\(/g) || []).length - (line.match(/\)/g) || []).length; // check brace
+            if (line.includes('});')) { // if meet closing brace, -=1 counter for brace
+                braceCounter -= 1;
+            }
+            if (braceCounter === 0) { //completed reading the body
+                testBody = testBodyParts.join('\n');
 
-        const obj = new FunctionTest(fnSignature, fnBody);
+                // Store the read data as function test object in map
+                const obj = new FunctionTest(testSig, testBody);
 
-        if (!fnCasesMap.has(fnSignature)) {
-            fnCasesMap.set(fnSignature, new Set([obj]));
+                if (!fnCasesMap.has(testSig)) {
+                    fnCasesMap.set(testSig, new Set([obj]));
+                }
+                else {
+                    fnCasesMap.get(testSig).add(obj);
+                }
+                
+                //reset values
+                testSig = '';
+                testBody = '';
+                isInBody = false;
+                testForValue = '';
+                testBodyParts = [];
+            }
         }
-        else {
-            fnCasesMap.get(fnSignature).add(obj);
-        }
-    }
+    })
+
+    console.log("Tests loaded from file: ", fnCasesMap);
+    
 })
 
 // [IPCHandler]

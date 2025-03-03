@@ -3,6 +3,7 @@ const { ipcRenderer } = require('electron');
 const functionsList = document.getElementById('functions-list');
 const functionSelected = document.getElementById('function-selected');
 const functionTestList = document.getElementById('function-test-list');
+const testSelectedDelete = document.getElementById('test-selected-delete');
 const { createTemplate } = require('./assets/scripts/functions.js');
 
 // function to show the creator box and button
@@ -110,6 +111,7 @@ functionTestList.addEventListener('receiveTest', async function(event) {
     // reset the selected function
     functionSelected.innerHTML = '';
 
+    // Setting selected function here------------------------
     const fnContainer = document.createElement('div');
     fnContainer.id = "function-box-div";
     fnContainer.classList.add('function-box');
@@ -125,6 +127,7 @@ functionTestList.addEventListener('receiveTest', async function(event) {
     fnContainer.appendChild(fnBody);
 
     functionSelected.appendChild(fnContainer);
+    // ------------------------------------------------------
 
     // set the currently selected function in main
     await ipcRenderer.invoke('set-selected-function', event.detail);
@@ -155,12 +158,43 @@ functionTestList.addEventListener('updateTestList', async function(event) {
         testContainer.classList.add('test-box');
         
         const testBody = document.createElement('pre');
-        console.log("update body: ", test.fnBody);
-        testBody.textContent = test.fnBody;
+        console.log("update body: ", test.fnTestBody);
+        testBody.textContent = test.fnTestBody;
         testContainer.appendChild(testBody);
+
+        var btn = document.createElement('button');
+        btn.textContent = "Select";
+        btn.addEventListener('click', async () => {
+            const event = new CustomEvent('setForDelete', {
+                detail: test
+            })
+            testSelectedDelete.dispatchEvent(event);
+        })
+        testContainer.appendChild(btn);
 
         functionTestList.appendChild(testContainer);
     })
+})
+
+// Adds listener to set the test selected for deletion
+testSelectedDelete.addEventListener('setForDelete', async function(event) {
+    testSelectedDelete.innerHTML = '';
+
+    // Set test to delete on the main process
+    await ipcRenderer.invoke('set-selected-test-delete', event.detail);
+
+    // Setting to display the test currently selected for deletion here------
+    const fnContainer = document.createElement('div');
+    fnContainer.id = "function-box-div";
+    fnContainer.classList.add('function-box');
+
+    // creates a pre element to store the body of the function
+    const fnTestBody = document.createElement('pre');
+    fnTestBody.textContent = event.detail.fnTestBody;
+    fnContainer.appendChild(fnTestBody);
+
+    testSelectedDelete.appendChild(fnContainer);
+    // ----------------------------------------------------------------------
 })
 
 // Adds listener to the confirm add test button to add the test from the creator into the map
@@ -182,7 +216,22 @@ document.getElementById('confirmAddTestBtn').addEventListener('click', async () 
     })
     //updates the list of tests
     functionTestList.dispatchEvent(event);
-});
+})
+
+// Adds listener to the button to confirm deletion of the selected test
+document.getElementById('deleteTestBtn').addEventListener('click', async () => {
+    testSelectedDelete.innerHTML = '';
+
+    // Call delete of the selected test on the main process
+    await ipcRenderer.invoke('delete-selected-test');
+
+    // Refresh the test list by getting the current function selected
+    const curFn = await ipcRenderer.invoke('get-selected-function');
+    const event = new CustomEvent('updateTestList', {
+        detail: curFn
+    })
+    functionTestList.dispatchEvent(event);
+})
 
 // Adds listener to the button to save the user tests to a file
 document.getElementById("saveUserTestsBtn").addEventListener('click', async () => {
