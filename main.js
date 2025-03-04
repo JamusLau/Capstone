@@ -4,8 +4,9 @@
 //app - Electron module for contrlling lifecycle of the application
 //BrowserWindow - Create and manage browserwindows
 const { app, BrowserWindow, ipcMain } = require('electron');
-const { createTemplate, extractFunctions } = require('./assets/scripts/functions.js');
+const { createTemplate, extractFunctions, createSignature } = require('./assets/scripts/functions.js');
 const fs = require('fs');
+const { create } = require('domain');
 
 // use to store reference of main window instance
 let win;
@@ -14,6 +15,12 @@ let win;
 var fnSelected;
 //store reference for currently selected test to delete
 var testSelectedDelete;
+//stores a copy of all the functions extracted from the files
+const functionsExtracted = new Map();
+
+// Saves all the created test cases for each function
+// Format: Map<functionSignature, Set<FunctionTest>>
+const fnCasesMap = new Map();
 
 // store reference for test's user cases for each function
 // eachFn should have an array of test objects
@@ -23,10 +30,6 @@ class FunctionTest {
         this.fnTestBody = fnTestBody;
     }
 }
-
-// Saves all the created test cases for each function
-// Format: Map<functionSignature, Set<FunctionTest>>
-const fnCasesMap = new Map();
 
 //creates a new window
 function createWindow() {
@@ -48,19 +51,56 @@ function createWindow() {
 }
 
 // [IPCHandler]
+// [Description] Handler to create a signature by passing in the function name and file name
+// [Parameters] name - Name of the function
+//              file - Name of the file
+// [Returns] Signature of the function
+ipcMain.handle('create-signature', async (event, name, file) => {
+    return createSignature(name, file);
+});
+
+// [IPCHandler]
 // [Description] Handler to extract functions from the files
 // [Parameters] files - Array of files to extract functions from
 // [Returns] Array of functions extracted from the files
 ipcMain.handle('get-functions', async (event, files) => {
     console.log("files received",files); 
-    return extractFunctions(files); // function in functions.js
+    var fns = extractFunctions(files);
+    fns.forEach(fn => {
+        var signature = createSignature(fn.name, fn.file);
+        functionsExtracted.set(signature, fn);
+    });
+    console.log("All functions extracted: ", functionsExtracted);
+    return functionsExtracted; // function in functions.js
+});
+
+// [IPCHandler]
+// [Description] Handler to get all functions extracted from the files
+// [Returns] All functions extracted from the files
+ipcMain.handle('get-extracted-functions', async (event) => {
+    return functionsExtracted;
+})
+
+// [IPCHandler]
+// [Description] Handler to get currently selected function
+// [Returns] Currently selected function (fnSelected)
+ipcMain.handle('get-selected-function-signature', async (event) => {
+    return fnSelected;
 });
 
 // [IPCHandler]
 // [Description] Handler to get currently selected function
 // [Returns] Currently selected function (fnSelected)
 ipcMain.handle('get-selected-function', async (event) => {
-    return fnSelected;
+    return functionsExtracted.get(fnSelected);
+});
+
+// [IPCHandler]
+// [Description] Handler to get a function from the signature from functionsExtracted
+// [Parameters] signature - Signature of the function to get
+// [Returns] Function from functionsExtracted
+ipcMain.handle('get-function-from-signature', async (event, signature) => {
+    return functionsExtracted.get(signature);
 });
 
 // [IPCHandler]
@@ -83,11 +123,11 @@ ipcMain.handle('store-function-test', async (event, fnSignature, fnTestBody) => 
 })
 
 // [IPCHandler]
-// [Description] Sets the currently selected function
+// [Description] Sets the currently selected function with signature
 // [Parameters] fn - Function to set as selected
 // [Returns] None
-ipcMain.handle('set-selected-function', async (event, fn) => {
-    fnSelected = fn;
+ipcMain.handle('set-selected-function', async (event, fnSig) => {
+    fnSelected = fnSig;
     console.log("Function selected: ", fnSelected);
 })
 
@@ -176,6 +216,7 @@ ipcMain.handle('load-tests-from-file', async (event, fileContent) => {
                 braceCounter -= 1;
             }
             if (braceCounter === 0) { //completed reading the body
+                testBodyParts.push("});");
                 testBody = testBodyParts.join('\n');
 
                 // Store the read data as function test object in map

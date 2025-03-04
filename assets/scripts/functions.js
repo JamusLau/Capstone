@@ -3,7 +3,7 @@ const path = require('path');
 const acorn = require('acorn');
 const walk = require('acorn-walk');
 
-module.exports = { createTemplate, extractFunctions }
+module.exports = { createTemplate, extractFunctions, createSignature };
 
 // function to extract functions from files
 function extractFunctions(files) {
@@ -88,3 +88,9 @@ function createTemplate(fnObject)
 
     return template;
 }
+
+function createSignature(name, file) {
+    return name + "@" + file;
+}
+
+

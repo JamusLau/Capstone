@@ -4,6 +4,7 @@ const functionsList = document.getElementById('functions-list');
 const functionSelected = document.getElementById('function-selected');
 const functionTestList = document.getElementById('function-test-list');
 const testSelectedDelete = document.getElementById('test-selected-delete');
+const generationFnTypesDiv = document.getElementById('types-for-function');
 const { createTemplate } = require('./assets/scripts/functions.js');
 
 // function to show the creator box and button
@@ -70,6 +71,9 @@ document.getElementById('scanButton').addEventListener('click', async () => {
     // creates a div for each function detected, and adds the name, file and body of the function
     // each (fn) contains => name, file, parameters, body, full
     functions.forEach(fn => {
+        //get a signature for the function
+        const signature = fn.name + "@" + fn.file;
+
         // creates the div and adds a class to it to store each function
         const fnContainer = document.createElement('div');
         fnContainer.id = "function-box-div";
@@ -77,7 +81,7 @@ document.getElementById('scanButton').addEventListener('click', async () => {
 
         // creates a paragraph element to store the name of the function
         const fnHead = document.createElement('p');
-        fnHead.textContent = `${fn.name} in ${fn.file}`;
+        fnHead.textContent = signature;
         fnContainer.appendChild(fnHead);
 
         // creates a pre element to store the body of the function
@@ -92,7 +96,7 @@ document.getElementById('scanButton').addEventListener('click', async () => {
         btn.textContent = "Select";
         btn.addEventListener('click', async () => {
             const event = new CustomEvent('receiveTest', {
-                detail: fn //sends the function over to the functionTestList
+                detail: signature //sends the signature over to the functionTestList
             })
             functionTestList.dispatchEvent(event);
         })
@@ -110,6 +114,13 @@ document.getElementById('scanButton').addEventListener('click', async () => {
 functionTestList.addEventListener('receiveTest', async function(event) {
     // reset the selected function
     functionSelected.innerHTML = '';
+    
+    // set the currently selected function in main
+    await ipcRenderer.invoke('set-selected-function', event.detail);
+
+    //gets the function form main process using the signature
+    const fn = await ipcRenderer.invoke('get-selected-function');
+    console.log("Function received: ", fn);
 
     // Setting selected function here------------------------
     const fnContainer = document.createElement('div');
@@ -118,19 +129,16 @@ functionTestList.addEventListener('receiveTest', async function(event) {
 
     // creates a paragraph element to store the name of the function
     const fnHead = document.createElement('p');
-    fnHead.textContent = `${event.detail.name} in ${event.detail.file}`;
+    fnHead.textContent = event.detail;
     fnContainer.appendChild(fnHead);
 
     // creates a pre element to store the body of the function
     const fnBody = document.createElement('pre');
-    fnBody.textContent = event.detail.full;
+    fnBody.textContent = fn.full;
     fnContainer.appendChild(fnBody);
 
     functionSelected.appendChild(fnContainer);
     // ------------------------------------------------------
-
-    // set the currently selected function in main
-    await ipcRenderer.invoke('set-selected-function', event.detail);
 
     //updates and retrives all user tests created for the selected function
     const newEvent = new CustomEvent('updateTestList', {
@@ -148,7 +156,7 @@ functionTestList.addEventListener('updateTestList', async function(event) {
     functionTestList.innerHTML = '';
 
     // grabs all the selected function's tests from the map (if any)
-    const tests = await ipcRenderer.invoke('get-tests-for-function', event.detail.name + "@" + event.detail.file);
+    const tests = await ipcRenderer.invoke('get-tests-for-function', event.detail);
     const arrTests = Array.from(tests);
     
     // creates a div and box containing each test created for the function
@@ -166,7 +174,7 @@ functionTestList.addEventListener('updateTestList', async function(event) {
         btn.textContent = "Select";
         btn.addEventListener('click', async () => {
             const event = new CustomEvent('setForDelete', {
-                detail: test
+                detail: test //sends the actual test as part of the event
             })
             testSelectedDelete.dispatchEvent(event);
         })
@@ -212,7 +220,7 @@ document.getElementById('confirmAddTestBtn').addEventListener('click', async () 
 
     //event to update the list
     const event = new CustomEvent('updateTestList', {
-        detail: selected
+        detail: signature
     })
     //updates the list of tests
     functionTestList.dispatchEvent(event);
@@ -226,7 +234,7 @@ document.getElementById('deleteTestBtn').addEventListener('click', async () => {
     await ipcRenderer.invoke('delete-selected-test');
 
     // Refresh the test list by getting the current function selected
-    const curFn = await ipcRenderer.invoke('get-selected-function');
+    const curFn = await ipcRenderer.invoke('get-selected-function-signature');
     const event = new CustomEvent('updateTestList', {
         detail: curFn
     })
@@ -257,6 +265,13 @@ document.getElementById("testFileInput").addEventListener('change', async () => 
         reader.onload = async function(event) {
             const fileContent = event.target.result;
             await ipcRenderer.invoke('load-tests-from-file', fileContent);
+
+            // Refresh the test list by getting the current function selected
+            const curFn = await ipcRenderer.invoke('get-selected-function-signature');
+            const updateEvent = new CustomEvent('updateTestList', {
+                detail: curFn
+            })
+            functionTestList.dispatchEvent(updateEvent);
         };
 
         reader.onerror = function(error) {
