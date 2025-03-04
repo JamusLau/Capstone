@@ -170,6 +170,8 @@ functionTestList.addEventListener('updateTestList', async function(event) {
         testBody.textContent = test.fnTestBody;
         testContainer.appendChild(testBody);
 
+        // creates a button for user to select the test to mark for deletion
+        // stores the entire test as part of the button as body will need to be compared
         var btn = document.createElement('button');
         btn.textContent = "Select";
         btn.addEventListener('click', async () => {
