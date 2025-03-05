@@ -4,9 +4,8 @@
 //app - Electron module for contrlling lifecycle of the application
 //BrowserWindow - Create and manage browserwindows
 const { app, BrowserWindow, ipcMain } = require('electron');
-const { createTemplate, extractFunctions, createSignature } = require('./assets/scripts/functions.js');
+const { extractFunctions, createSignature, generateCasesForFunction } = require('./assets/scripts/functions.js');
 const fs = require('fs');
-const { create } = require('domain');
 
 // use to store reference of main window instance
 let win;
@@ -17,6 +16,8 @@ var fnSelected;
 var testSelectedDelete;
 //stores a copy of all the functions extracted from the files
 const functionsExtracted = new Map();
+// map to store all functions per script -> Map<script, Array<function>>
+const scriptFunctionsMap = new Map();
 
 // Saves all the created test cases for each function
 // Format: Map<functionSignature, Set<FunctionTest>>
@@ -67,10 +68,19 @@ ipcMain.handle('get-functions', async (event, files) => {
     console.log("files received",files); 
     var fns = extractFunctions(files);
     fns.forEach(fn => {
+        // adding to functionas extracted by creating signature and storing function
         var signature = createSignature(fn.name, fn.file);
         functionsExtracted.set(signature, fn);
+
+        // adding to scriptFunctionsMap
+        if (!scriptFunctionsMap.has(fn.file)) {
+            scriptFunctionsMap.set(fn.file, [fn.name]);
+        } else {
+            scriptFunctionsMap.get(fn.file).push(fn.name);
+        }
     });
     console.log("All functions extracted: ", functionsExtracted);
+    console.log("Script functions map: ", scriptFunctionsMap);
     return functionsExtracted; // function in functions.js
 });
 
@@ -170,6 +180,15 @@ ipcMain.handle('get-tests-for-function', async (event, fnSignature) => {
 // [Returns] None
 ipcMain.handle('save-tests-to-file', async (event, outputFilePath) => {
     let data = '';
+    data += `const assert = require('assert');\n\n`;
+    
+    // writing the requires for each function at the top of the script
+    scriptFunctionsMap.forEach((value, key) => {
+        data += `const { ${value.join(', ')} } = require('../${key}');\n`;
+    })
+    data += `\n`;
+
+    // writing the tests for each function
     fnCasesMap.forEach((value, key) => {
         value.forEach(test => {
             data += `//Test for: ${key}\n`;
@@ -249,7 +268,14 @@ ipcMain.handle('load-tests-from-file', async (event, fileContent) => {
 //              count - Number of tests to generate
 // [Returns] None
 ipcMain.handle('generate-and-save-tests', async (event, outputFilePath, count) => {
-    console.log("Generate tests @" + outputFilePath + " count: " + count);  
+    console.log("Generate tests @" + outputFilePath + " count: " + count); 
+
+    functionsExtracted.forEach((value, key) => {
+        console.log("key: ", key);
+        console.log("value: ", value);
+
+        var cases = generateCasesForFunction(value, count);
+    })
 })
 
 //checks when Electron has finished loading, then runs the function

@@ -3,7 +3,29 @@ const path = require('path');
 const acorn = require('acorn');
 const walk = require('acorn-walk');
 
-module.exports = { createTemplate, extractFunctions, createSignature };
+// Mocha for testing
+const Mocha = require('mocha'),
+      Suite = Mocha.Suite,
+      Runner = Mocha.Runner,
+      Test = Mocha.Test;
+
+module.exports = { createTemplate, extractFunctions, createSignature, generateCasesForFunction };
+
+const typeTestCases = [
+    { input: 1, expected: 1, shouldThrow: false},                           //Number
+    { input: 'hello', expected: 'hello', shouldThrow: false},               //String
+    { input: true, expected: true, shouldThrow: false},                     //Boolean
+    { input: null, expected: null, shouldThrow: false},                     //Null
+    { input: undefined, expected: undefined, shouldThrow: false},           //Undefined
+    { input: [], expected: [], shouldThrow: false},                         //Array
+    { input: {}, expected: {}, shouldThrow: false},                         //Object
+    { input: new Date(), expected: new Date(), shouldThrow: false},         //Date
+    { input: new Error(), expected: new Error(), shouldThrow: false},       //Error
+    { input: new Map(), expected: new Map(), shouldThrow: false},           //Map
+    { input: new Set(), expected: new Set(), shouldThrow: false},           //Set
+    { input: new WeakMap(), expected: new WeakMap(), shouldThrow: false},   //WeakMap
+    { input: new WeakSet(), expected: new WeakSet(), shouldThrow: false},   //WeakSet
+]
 
 // function to extract functions from files
 function extractFunctions(files) {
@@ -73,24 +95,60 @@ function extractFunctions(files) {
 // describe('add()', () => {
 //     it('Description of add', () => {
 //         const result = add(1, 2);
-//         expect(result).to.equal(3);  // Use Chai's expect() syntax
+//         expect(result).to.equal(3); 
 //     });
 // });
 function createTemplate(fnObject)
 {
     const template =  
-`describe('${fnObject.name}()', () => {
-    it('Description of ${fnObject.name}', () => {
+`describe('#${fnObject.name}()', function() {
+    it('${fnObject.name} should return (value)', function() {
         const result = ${fnObject.name}(${fnObject.parameters});
-        expect(result).to.equal(3);  // Use Chai's expect() syntax
+        assert.equal(result, value);
     });
 });`
 
     return template;
 }
 
+// create a signature for the function using name and file
 function createSignature(name, file) {
     return name + "@" + file;
 }
 
+// for generating test cases for function
+function generateCasesForFunction(fn, count) {
+    //get the parameters from the function
+    const params = fn.parameters;
+    const cases = [];
 
+    //instantiate mocha instance
+    var mocha = new Mocha({
+        reporter: 'json'
+    })
+
+
+    return new Promise((resolve, reject) => {
+        const mocha = new Mocha();
+    })
+
+    //check if got params
+    // if (!Array.isArray(params) || !params.length)
+    // {
+
+    // }
+
+    //copy function
+    //insert line into function to typeof parameters
+    //output into somewhere
+    //then capture the output
+
+    //get the types of the parameters
+    //create test cases based on the types
+    //try edge cases
+    //try types
+    //find constraints
+    //random based on 
+    
+    //return values and expected values
+}

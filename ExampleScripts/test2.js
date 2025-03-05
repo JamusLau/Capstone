@@ -1,3 +1,3 @@
 function test2() {
-    console.log('test2');
+    return Math.floor(Math.random() * 100);
 }
