@@ -4,7 +4,7 @@ const functionsList = document.getElementById('functions-list');
 const functionSelected = document.getElementById('function-selected');
 const functionTestList = document.getElementById('function-test-list');
 const testSelectedDelete = document.getElementById('test-selected-delete');
-const generationFnTypesDiv = document.getElementById('types-for-function');
+const fnTypesDiv = document.getElementById('types-for-function');
 const { createTemplate } = require('./assets/scripts/functions.js');
 
 // function to show the creator box and button
@@ -35,6 +35,16 @@ function hideCreator() {
 
     if (y.style.display === "block") {
         y.style.display = "none";
+    }
+}
+
+async function showTypesForFunction() {
+    var x = document.getElementById("doSpecifyType");
+    if (x.value == "All")
+    {
+        fnTypesDiv.style.display = "none";
+    } else if (x.value == "Specify") {
+        fnTypesDiv.style.display = "block";
     }
 }
 
@@ -122,7 +132,7 @@ functionTestList.addEventListener('receiveTest', async function(event) {
     const fn = await ipcRenderer.invoke('get-selected-function');
     console.log("Function received: ", fn);
 
-    // Setting selected function here------------------------
+    // Setting selected function here--------------------------
     const fnContainer = document.createElement('div');
     fnContainer.id = "function-box-div";
     fnContainer.classList.add('function-box');
@@ -138,7 +148,50 @@ functionTestList.addEventListener('receiveTest', async function(event) {
     fnContainer.appendChild(fnBody);
 
     functionSelected.appendChild(fnContainer);
-    // ------------------------------------------------------
+    // --------------------------------------------------------
+    // Setting selected function's parameter types here--------
+    fnTypesDiv.innerHTML = '';
+    // create the signature
+    const signature = fn.name + "@" + fn.file;
+    // get all the recorded types for the function parameters
+    const fnTypes = await ipcRenderer.invoke('get-function-param-types', signature);
+    console.log("Types received: ", fnTypes);
+    // create a dropdown for each parameter
+    fnTypes.forEach(type => {
+        // create the label for the dropdown
+        const label = document.createElement('label');
+        label.setAttribute('for', 'type');
+        label.textContent = type[0] + " type: ";
+        fnTypesDiv.appendChild(label);
+
+        // create the dropdown and the dropdown options
+        const typeHead = document.createElement('select');
+        typeHead.setAttribute('id', 'type');
+        typeHead.options.add(new Option("All", "All"));
+        typeHead.options.add(new Option("Number", "Number"));
+        typeHead.options.add(new Option("String", "String"));
+        typeHead.options.add(new Option("Boolean", "Boolean"));
+        typeHead.options.add(new Option("Null", "Null"));
+        typeHead.options.add(new Option("Undefined", "Undefined"));
+        typeHead.options.add(new Option("Array", "Array"));
+        typeHead.options.add(new Option("Object", "Object"));
+        typeHead.options.add(new Option("Date", "Date"));
+        typeHead.options.add(new Option("Error", "Error"));
+        typeHead.options.add(new Option("Map", "Map"));
+        typeHead.options.add(new Option("WeakMap", "WeakMap"));
+        typeHead.options.add(new Option("Set", "Set"));
+        typeHead.options.add(new Option("WeakSet", "WeakSet"));
+        typeHead.options.add(new Option("None", "None"));
+        // set a listener to update the type on the main process when user selects from dropdown
+        typeHead.addEventListener('change', async () => {
+            await ipcRenderer.invoke('set-function-param-types', signature, type[0], typeHead.value);
+        })
+        // set value of dropdown to current value
+        typeHead.value = type[1];
+        fnTypesDiv.appendChild(typeHead);
+        fnTypesDiv.appendChild(document.createElement('br'));
+    })
+    //---------------------------------------------------------
 
     //updates and retrives all user tests created for the selected function
     const newEvent = new CustomEvent('updateTestList', {

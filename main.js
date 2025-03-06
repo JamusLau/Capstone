@@ -14,10 +14,15 @@ let win;
 var fnSelected;
 //store reference for currently selected test to delete
 var testSelectedDelete;
-//stores a copy of all the functions extracted from the files
+//  stores a copy of all the functions extracted from the files
+//  Format: Map<functionSignature, function>
 const functionsExtracted = new Map();
-// map to store all functions per script -> Map<script, Array<function>>
+//  map to store all functions per script
+//  Format: Map<scriptName, Array<functionName>>
 const scriptFunctionsMap = new Map();
+//  map to store all defined parameter types for each function -> Map<functionSignature, tuple[string, string]>
+//  Format: Map<functionSignature, Set<Array<paramName, paramType>>
+const functionParamTypes = new Map();
 
 // Saves all the created test cases for each function
 // Format: Map<functionSignature, Set<FunctionTest>>
@@ -77,6 +82,19 @@ ipcMain.handle('get-functions', async (event, files) => {
             scriptFunctionsMap.set(fn.file, [fn.name]);
         } else {
             scriptFunctionsMap.get(fn.file).push(fn.name);
+        }
+
+        // adding to functionParamTypes
+        if (fn.parameters.length > 0) {
+            fn.parameters.forEach(param => {
+                if (!functionParamTypes.has(signature)) {
+                    functionParamTypes.set(signature, new Set([]));
+                    functionParamTypes.get(signature).add([param, "All"]);
+                } else {
+                    functionParamTypes.get(signature).add([param, "All"]);
+                }
+            })
+            console.log("Function param types: ", functionParamTypes);
         }
     });
     console.log("All functions extracted: ", functionsExtracted);
@@ -260,6 +278,20 @@ ipcMain.handle('load-tests-from-file', async (event, fileContent) => {
 
     console.log("Tests loaded from file: ", fnCasesMap);
     
+})
+
+ipcMain.handle('set-function-param-types', async(event, fnSignature, paramName, paramType) => {
+    console.log("Function param to update: ", fnSignature, paramName, paramType);
+    functionParamTypes.get(fnSignature).forEach(param => {
+        if (param[0] === paramName) {
+            param[1] = paramType;
+        }
+    })
+    console.log("Function param types updated: ", functionParamTypes);
+})
+
+ipcMain.handle('get-function-param-types', async(event, fnSignature) => {
+    return functionParamTypes.get(fnSignature);
 })
 
 // [IPCHandler]
