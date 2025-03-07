@@ -111,44 +111,42 @@ function createTemplate(fnObject)
     return template;
 }
 
+function createTemplateTestError(fnObject, args) {
+    const template =  
+`describe('#${fnObject.name}()', function() {
+    it('${fnObject.name} should handle ${args} for ${fnObject.parameters}', function() {
+        let error = false;
+        try {
+            const result = ${fnObject.name}(${args});
+        } catch (error) {
+            assert.equal(error.message, 'Error');
+        }
+        assert.equal(error, false);
+    });
+});`
+    
+    return template;
+}
+
+
 // create a signature for the function using name and file
 function createSignature(name, file) {
     return name + "@" + file;
 }
 
 // for generating test cases for function
-function generateCasesForFunction(fn, count) {
+function generateCasesForFunction(fn, types, count) {
     //get the parameters from the function
-    const params = fn.parameters;
     const cases = [];
 
-    //instantiate mocha instance
-    var mocha = new Mocha({
-        reporter: 'json'
-    })
-
-
-    return new Promise((resolve, reject) => {
-        const mocha = new Mocha();
-    })
-
-    //check if got params
-    // if (!Array.isArray(params) || !params.length)
-    // {
-
-    // }
-
-    //copy function
-    //insert line into function to typeof parameters
-    //output into somewhere
-    //then capture the output
-
-    //get the types of the parameters
-    //create test cases based on the types
-    //try edge cases
-    //try types
-    //find constraints
-    //random based on 
-    
-    //return values and expected values
+    for (let i = 0; i < count; i++) {
+        var newArgs = [];
+        types.forEach(type => {
+            // random the value in types, based on the type
+            // push into newArgs
+            // if the type is not in the types, push null
+        })
+        var createdFn = createTemplateTestError(fn, newArgs);
+        cases.push(createdFn);
+    }
 }

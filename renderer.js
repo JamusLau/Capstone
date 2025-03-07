@@ -38,6 +38,7 @@ function hideCreator() {
     }
 }
 
+// function to show the types for the function parameters
 async function showTypesForFunction() {
     var x = document.getElementById("doSpecifyType");
     if (x.value == "All")

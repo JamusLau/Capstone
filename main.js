@@ -280,6 +280,12 @@ ipcMain.handle('load-tests-from-file', async (event, fileContent) => {
     
 })
 
+// [IPCHandler]
+// [Description] Sets the type of the param for a function
+// [Parameters] fnSignature - Signature of the function to update
+//              paramName - Name of the param to update
+//              paramType - Type of the param to update
+// [Returns] None
 ipcMain.handle('set-function-param-types', async(event, fnSignature, paramName, paramType) => {
     console.log("Function param to update: ", fnSignature, paramName, paramType);
     functionParamTypes.get(fnSignature).forEach(param => {
@@ -290,6 +296,10 @@ ipcMain.handle('set-function-param-types', async(event, fnSignature, paramName, 
     console.log("Function param types updated: ", functionParamTypes);
 })
 
+// [IPCHandler]
+// [Description] Gets the param types of the function
+// [Parameters] fnSignature - Signature of the function to get the params of
+// [Returns] None
 ipcMain.handle('get-function-param-types', async(event, fnSignature) => {
     return functionParamTypes.get(fnSignature);
 })
@@ -302,11 +312,14 @@ ipcMain.handle('get-function-param-types', async(event, fnSignature) => {
 ipcMain.handle('generate-and-save-tests', async (event, outputFilePath, count) => {
     console.log("Generate tests @" + outputFilePath + " count: " + count); 
 
+    // incompleteW
+    var allCasesGenerated = [];
     functionsExtracted.forEach((value, key) => {
         console.log("key: ", key);
         console.log("value: ", value);
 
-        var cases = generateCasesForFunction(value, count);
+        var types = functionParamTypes.get(key);
+        var cases = generateCasesForFunction(value, types, count);
     })
 })
 
