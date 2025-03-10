@@ -344,6 +344,7 @@ document.getElementById("generateTestBtn").addEventListener('click', async () =>
     var fileName = document.getElementById('generatedTestFileName').value;
     //gets the count from input
     var count = document.getElementById('generationCount').value;
+    let edgeChecked = document.getElementById('includeEdgeCases').checked;
     //sets default if file name is empty
     if (fileName == "" || fileName == null) {
         fileName = "GeneratedTests";
@@ -353,5 +354,5 @@ document.getElementById("generateTestBtn").addEventListener('click', async () =>
         count = 0;
     }
     //invoke function to generate and save tests to file
-    ipcRenderer.invoke('generate-and-save-tests', "./test/" + fileName + ".js", count);
+    ipcRenderer.invoke('generate-and-save-tests', "./test/" + fileName + ".js", count, edgeChecked);
 })

@@ -54,8 +54,11 @@
                 <!-- Generates tests based on best known values -->
             <label for="generationCount">Number of cases generated per function:</label>
             <input type="number" id="generationCount" style="max-width: 50px;"><br>
+                <!-- Include edge cases -->
+            <input type="checkbox" id="includeEdgeCases" name="includeEdgeCases" value="includeEdgeCases">
+            <label for="includeEdgeCases">Include Edge Cases</label> <br> <br>
                 <!-- Run tests -->
-            <button id="runTestsBtn" onClick="runMocha()">Run Tests (Mocha)</button>"
+            <button id="runTestsBtn" onClick="runMocha()">Run Tests (Mocha)</button>
             <!-- ----------------------------------------------- -->
             <!-- Creator Stuff -->
             <h3>Test Creator:</h3>

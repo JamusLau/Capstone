@@ -309,18 +309,34 @@ ipcMain.handle('get-function-param-types', async(event, fnSignature) => {
 // [Parameters] outputFilePath - Path to save the file to
 //              count - Number of tests to generate
 // [Returns] None
-ipcMain.handle('generate-and-save-tests', async (event, outputFilePath, count) => {
+ipcMain.handle('generate-and-save-tests', async (event, outputFilePath, count, edgeChecked) => {
     console.log("Generate tests @" + outputFilePath + " count: " + count); 
 
-    // incompleteW
+    // stores all the generated test cases
+    // stores it in the describe block
+    // each function has its own describe block
     var allCasesGenerated = [];
+
+    // generates test cases for each function
+    // based on the count and whether edge is included
     functionsExtracted.forEach((value, key) => {
         console.log("key: ", key);
         console.log("value: ", value);
 
+        // get the types of the parameters for the function
         var types = functionParamTypes.get(key);
-        var cases = generateCasesForFunction(value, types, count);
+        // generates test cases based on the types, count and edge included (?)
+        var cases = generateCasesForFunction(value, types, count, edgeChecked);
+        // add to all the generated test cases
+        allCasesGenerated.push(cases);
     })
+
+    //combine all the generated test cases and save to a file
+    let data = '';
+    data += `const assert = require('assert');\n\n`;
+    data += allCasesGenerated.join('\n\n');
+    fs.writeFileSync(outputFilePath, data, 'utf8');
+    console.log("Tests generated and saved to: ", outputFilePath);
 })
 
 //checks when Electron has finished loading, then runs the function
