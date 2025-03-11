@@ -95,13 +95,76 @@ function createTemplate(fnObject)
     return template;
 }
 
-function createTemplateTestError(fnObject, args) {
-    const template =  
+//types here is the set of types from functionParamTypes
+//Set([par1, "Number"], [par2, "String"], [par3, "Boolean"])
+function createTemplateTestError(fnObject, types) {
+    var newArgs = [];
+    var template = types == null || types.length <= 0 ? 
 `   
-    it('${fnObject.name} should handle ${args} for ${fnObject.parameters}', function() {
+    it('${fnObject.name} should handle with no error', function() {
         let error = false;
+` :
+`   
+    it('${fnObject.name} should handle ${types} for ${fnObject.parameters}', function() {
+        let error = false;
+`
+    //randomize types here and add line by line here
+    let counter = 0;
+    types.forEach(type => {
+        let newName = `i${type[1]}${counter}`;
+        newArgs.push(newName);
+        let value = RandomizeValue(type[1]);
+        switch(type[1]) {
+            case 'Number':
+                template += `        let ${newName} = ${value};\n`;
+                break;
+            case 'String':
+                template += `        let ${newName} = '${value}';\n`;
+                break;
+            case 'Boolean':
+                template += `        let ${newName} = ${value};\n`;
+                break;
+            case 'Null':
+                template += `        let ${newName} = ${value};\n`;
+                break;
+            case 'Undefined':
+                template += `        let ${newName} = ${value};\n`;
+                break;
+            case 'Array':
+                template += `        let ${newName} = ${JSON.stringify(value)};\n`;
+                break;
+            case 'Object':
+                template += `        let ${newName} = ${JSON.stringify(value)};\n`;
+                break;
+            case 'Date':
+                template += `        let ${newName} = new Date("${value}");\n`;
+                break;
+            case 'Error':
+                template += `        let ${newName} = new Error('${value}');\n`;
+                break;
+            case 'Map':
+                template += `        let ${newName} = new Map(JSON.parse(${JSON.stringify(value)}));\n`;
+                break;
+            case 'Set':
+                template += `        let ${newName} = new Set(JSON.parse(${JSON.stringify(value)}));\n`;
+                break;
+            case 'WeakMap':
+                template += `        let ${newName} = new WeakMap(JSON.parse(${JSON.stringify(value)}));\n`;
+                break;
+            case 'WeakSet':
+                template += `        let ${newName} = new WeakSet(JSON.parse(${JSON.stringify(value)}));\n`;
+                break;
+            default:
+                template += `        let ${newName} = ${value};\n`;
+                break;
+        }
+        counter++;
+    });
+    console.log("newargs", newArgs);
+    template += 
+`
         try {
-            const result = ${fnObject.name}(${args});
+            const result = ${fnObject.name}(${newArgs});
         } catch (error) {
             assert.equal(error.message, 'Error');
         }
@@ -117,11 +180,15 @@ function createSignature(name, file) {
 }
 
 // for generating test cases for function
+// fn - the function to generate cases for
+// types - contains the types for the parameters
+//         Set([par1, "Number"], [par2, "String"], [par3, "Boolean"])
+// count - the number of test cases to generate
+// edge - whether to generate edge cases
 function generateCasesForFunction(fn, types, count, edge) {
     //get the parameters from the function
     let data = '';
     let cases = [];
-
     // since function doesn't have parameters, just need to call and check if it works
     if (types == null || types.length <= 0) {
         data += `describe('#${fn.name}(${fn.parameters})', function() {`;
@@ -135,21 +202,13 @@ function generateCasesForFunction(fn, types, count, edge) {
         data += `describe('#${fn.name}(${fn.parameters})', function() {`;
         //create the 'it' test cases based on the count
         for (let i = 0; i < count; i++) {
-            var newArgs = []; //to store the new arguments that has been randomized
-            types.forEach(type => { //for each parameter, get a new random value based on type
-                newArgs.push(RandomizeValue(type[1]));
-            })
-            let createdFn = createTemplateTestError(fn, newArgs); //create case based on new values
+            let createdFn = createTemplateTestError(fn, types); //create case based on new values
             cases.push(createdFn); //add the created test case
         }
         
         //if edge case is enabled, add edge case
         if (edge) {
-            var edgeArgs = [];
-            types.forEach(type => {
-                edgeArgs.push(EdgeValue(type[1]));
-            })
-            let createdFn = createTemplateTestError(fn, edgeArgs);
+            let createdFn = createTemplateTestError(fn, types);
             data += createdFn;
         }
 
@@ -194,17 +253,23 @@ function RandomizeValue(type) {
             }
             break;
         case 'Date':
-            value = new Date(Math.floor(Math.random() * Date.now()));
+            const startDate = new Date(1925, 0, 1);
+            const endDate = new Date();
+            const randomTimestamp = startDate.getTime() + Math.random() * (endDate.getTime() - startDate.getTime());
+            value = new Date(randomTimestamp).toISOString();
             break;
         case 'Error':
-            value = new Error('Random error: ' + Math.random());
+            value = `Random error: ` + Math.random();
             break;
         case 'Map':
             value = new Map();
             const mapSize = Math.floor(Math.random() * 5); // Random map size
             for (let i = 0; i < mapSize; i++) {
-                value.set(Math.random().toString(36).substring(7), RandomizeValue('All'));
+                const key = (Math.random() + 1).toString(36).substring(7); // Random key as string
+                value.set(key, RandomizeValue('All')); // Set random value
             }
+            let mapArr = Array.from(value);
+            value = mapArr;
             break;
         case 'Set':
             value = new Set();
@@ -212,6 +277,8 @@ function RandomizeValue(type) {
             for (let i = 0; i < setSize; i++) {
                 value.add(RandomizeValue('All'));
             }
+            let setArr = Array.from(value);
+            value = setArr;
             break;
         case 'WeakMap':
             value = new WeakMap();
@@ -220,6 +287,8 @@ function RandomizeValue(type) {
                 let objKey = {}; // WeakMap only accepts objects as keys
                 value.set(objKey, RandomizeValue('All'));
             }
+            let weakMapArr = Array.from(value);
+            value = weakMapArr;
             break;
         case 'WeakSet':
             value = new WeakSet();
@@ -227,6 +296,8 @@ function RandomizeValue(type) {
             for (let i = 0; i < weakSetSize; i++) {
                 value.add({}); // WeakSet only accepts objects
             }
+            let weakSetArr = Array.from(value);
+            value = weakSetArr;
             break;
         default:
             value = null;
@@ -236,39 +307,48 @@ function RandomizeValue(type) {
 }
 
 function EdgeValue(type) {
-    let value;
     switch (type) {
         case 'All':
             break;
         case 'Number':
-            break;
+            return Math.random() < 0.33 ? Number.MAX_SAFE_INTEGER : 
+                Math.random() < 0.5 ?  Number.MIN_SAFE_INTEGER : NaN;
         case 'String':
-            break;
+            return Math.random() < 0.33 ? '' : 
+                Math.random() < 0.5 ? 'a'.repeat(1000000) : '   ';
         case 'Boolean':
-            break;
+            return Math.random() < 0.5 ? true : 
+                Math.random() < 0.5 ? false : 'invalid';
         case 'Null':
-            break;
+            return null;
         case 'Undefined':
-            break;
+            return undefined;
         case 'Array':
-            break;
+            return Math.random() < 0.33 ? [] :
+                Math.random() < 0.5 ? [Math.random()] : new Array(1000000).fill('edge');
         case 'Object':
-            break;
+            return Math.random() < 0.33 ? {} : 
+                Math.random() < 0.5 ? { key1: 'value' } : { key1: { nestedKey: 'nestedValue' }, key2: 'value' };
         case 'Date':
-            break;
+            return Math.random() < 0.33 ? new Date() :
+                Math.random() < 0.5 ? new Date('1900-01-01') : new Date('invalid date');
         case 'Error':
-            break;
+            return Math.random() < 0.5 ? new Error('Generic error') : new Error('Edge case error with stack trace');
         case 'Map':
-            break;
+            const map = new Map();
+            return Math.random() < 0.33 ? map :
+                Math.random() < 0.5 ? map.set('key1', 'value1') : map.set({}, new Date());
         case 'Set':
-            break;
+            return Math.random() < 0.33 ? new Set() :
+                Math.random() < 0.5 ? new Set([1]) : new Set([1, 2, 3, 'edge']);
         case 'WeakMap':
-            break;
+            const weakMap = new WeakMap();
+            return Math.random() < 0.5 ? weakMap.set({}, 'value') : weakMap.set(Object.create(null), 'edge');
         case 'WeakSet':
-            break;
+            const weakSet = new WeakSet();
+            return weakSet.add({}) || weakSet.add(Object.create(null));
         default:
             value = null;
             break;
     }
-    return value;
 }
