@@ -156,42 +156,42 @@ functionTestList.addEventListener('receiveTest', async function(event) {
     const signature = fn.name + "@" + fn.file;
     // get all the recorded types for the function parameters
     const fnTypes = await ipcRenderer.invoke('get-function-param-types', signature);
-    console.log("Types received: ", fnTypes);
-    // create a dropdown for each parameter
-    fnTypes.forEach(type => {
-        // create the label for the dropdown
-        const label = document.createElement('label');
-        label.setAttribute('for', 'type');
-        label.textContent = type[0] + " type: ";
-        fnTypesDiv.appendChild(label);
+    if (fnTypes) {
+        console.log("Types received: ", fnTypes);
+        // create a dropdown for each parameter
+        fnTypes.forEach(type => {
+            // create the label for the dropdown
+            const label = document.createElement('label');
+            label.setAttribute('for', 'type');
+            label.textContent = type[0] + " type: ";
+            fnTypesDiv.appendChild(label);
 
-        // create the dropdown and the dropdown options
-        const typeHead = document.createElement('select');
-        typeHead.setAttribute('id', 'type');
-        typeHead.options.add(new Option("All", "All"));
-        typeHead.options.add(new Option("Number", "Number"));
-        typeHead.options.add(new Option("String", "String"));
-        typeHead.options.add(new Option("Boolean", "Boolean"));
-        typeHead.options.add(new Option("Null", "Null"));
-        typeHead.options.add(new Option("Undefined", "Undefined"));
-        typeHead.options.add(new Option("Array", "Array"));
-        typeHead.options.add(new Option("Object", "Object"));
-        typeHead.options.add(new Option("Date", "Date"));
-        typeHead.options.add(new Option("Error", "Error"));
-        typeHead.options.add(new Option("Map", "Map"));
-        typeHead.options.add(new Option("WeakMap", "WeakMap"));
-        typeHead.options.add(new Option("Set", "Set"));
-        typeHead.options.add(new Option("WeakSet", "WeakSet"));
-        typeHead.options.add(new Option("None", "None"));
-        // set a listener to update the type on the main process when user selects from dropdown
-        typeHead.addEventListener('change', async () => {
-            await ipcRenderer.invoke('set-function-param-types', signature, type[0], typeHead.value);
+            // create the dropdown and the dropdown options
+            const typeHead = document.createElement('select');
+            typeHead.setAttribute('id', 'type');
+            typeHead.options.add(new Option("All", "All"));
+            typeHead.options.add(new Option("Number", "Number"));
+            typeHead.options.add(new Option("String", "String"));
+            typeHead.options.add(new Option("Boolean", "Boolean"));
+            typeHead.options.add(new Option("Null", "Null"));
+            typeHead.options.add(new Option("Undefined", "Undefined"));
+            typeHead.options.add(new Option("Array", "Array"));
+            typeHead.options.add(new Option("Object", "Object"));
+            typeHead.options.add(new Option("Date", "Date"));
+            typeHead.options.add(new Option("Error", "Error"));
+            typeHead.options.add(new Option("Map", "Map"));
+            typeHead.options.add(new Option("Set", "Set"));
+            typeHead.options.add(new Option("None", "None"));
+            // set a listener to update the type on the main process when user selects from dropdown
+            typeHead.addEventListener('change', async () => {
+                await ipcRenderer.invoke('set-function-param-types', signature, type[0], typeHead.value);
+            })
+            // set value of dropdown to current value
+            typeHead.value = type[1];
+            fnTypesDiv.appendChild(typeHead);
+            fnTypesDiv.appendChild(document.createElement('br'));
         })
-        // set value of dropdown to current value
-        typeHead.value = type[1];
-        fnTypesDiv.appendChild(typeHead);
-        fnTypesDiv.appendChild(document.createElement('br'));
-    })
+    }
     //---------------------------------------------------------
 
     //updates and retrives all user tests created for the selected function
