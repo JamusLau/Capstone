@@ -6,6 +6,12 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const { extractFunctions, createSignature, generateCasesForFunction } = require('./assets/scripts/functions.js');
 const fs = require('fs');
+const { exec } = require('child_process');
+const path = require('path');
+const Mocha = require('mocha'),
+      Suite = Mocha.Suite,
+      Runner = Mocha.Runner,
+      Test = Mocha.Test;
 
 // use to store reference of main window instance
 let win;
@@ -334,10 +340,47 @@ ipcMain.handle('generate-and-save-tests', async (event, outputFilePath, count, e
     //combine all the generated test cases and save to a file
     let data = '';
     data += `const assert = require('assert');\n\n`;
+    // writing the requires for each function at the top of the script
+    scriptFunctionsMap.forEach((value, key) => {
+        data += `const { ${value.join(', ')} } = require('../${key}');\n`;
+    })
+    data += `\n`;
     data += allCasesGenerated.join('\n\n');
     fs.writeFileSync(outputFilePath, data, 'utf8');
     console.log("Tests generated and saved to: ", outputFilePath);
 })
+
+// [IPCHandler]
+// [Description] Run mocha with all the tests in the tests folder
+// [Returns] Results
+ipcMain.handle('run-mocha', async (event) => {
+    const mocha = new Mocha();
+    var results = [];
+
+    // Dynamically load test files
+    const testDir = path.join(__dirname, 'tests');
+    fs.readdirSync(testDir).filter(file => file.endsWith('.js')).forEach(file => {
+        mocha.addFile(path.join(testDir, file));
+    });
+
+    //wait until mocha fully finishes
+    await new Promise((resolve, reject) => {
+        const runner = mocha.run((failures) => {
+            resolve();
+        });
+        runner.on('test', (test) => {
+            results.push({status: 'start', name: test.title});
+        });
+        runner.on('pass', (test) => {
+            results.push({status: 'pass', name: test.title});
+        });
+        runner.on('fail', (test, err) => {
+            results.push({status: 'fail', name: test.title, error: err.message});
+        });
+    });
+
+    return results;
+});
 
 //checks when Electron has finished loading, then runs the function
 app.whenReady().then(createWindow);

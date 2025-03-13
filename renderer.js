@@ -7,6 +7,8 @@ const testSelectedDelete = document.getElementById('test-selected-delete');
 const fnTypesDiv = document.getElementById('types-for-function');
 const { createTemplate } = require('./assets/scripts/functions.js');
 
+const Mocha = require('mocha');
+
 // function to show the creator box and button
 async function showCreator() {
     var x = document.getElementById("test-creator-box");
@@ -306,7 +308,7 @@ document.getElementById("saveUserTestsBtn").addEventListener('click', async () =
         fileName = "UserTests";
     }
     //invoke function to save tests to file
-    ipcRenderer.invoke('save-tests-to-file', "./test/" + fileName + ".js");
+    ipcRenderer.invoke('save-tests-to-file', "./tests/" + fileName + ".js");
 })
 
 // Adds listener to check any change to file input for user tests
@@ -354,5 +356,49 @@ document.getElementById("generateTestBtn").addEventListener('click', async () =>
         count = 0;
     }
     //invoke function to generate and save tests to file
-    ipcRenderer.invoke('generate-and-save-tests', "./test/" + fileName + ".js", count, edgeChecked);
+    ipcRenderer.invoke('generate-and-save-tests', "./tests/" + fileName + ".js", count, edgeChecked);
 })
+
+// Adds listener to the button to run the tests using mocha
+document.getElementById("runTestsBtn").addEventListener('click', async () => {
+    // get the results by sending an ipc call to main to run mocha
+    const results = await ipcRenderer.invoke('run-mocha');
+
+    // get the results divin the html
+    const resultsScreen = document.getElementById('mocha-test-results');
+    resultsScreen.innerHTML = '';
+
+    //for each of the result received
+    results.forEach(result => {
+        //create div for each result for each case
+        const testContainer = document.createElement('div');
+        //applys the styling for the div using the class
+        testContainer.classList.add('mocha-case-box'); 
+
+        //create div for the status of the test
+        const pf = document.createElement('div');
+        //applies the styling for the status using the class
+        pf.classList.add('status');
+        if (result.status == 'pass') {
+            pf.textContent = "Pass"; //Setting the text
+            pf.classList.add('pass'); //further apply a sub class
+        } else {
+            pf.textContent = "Fail";
+            pf.classList.add('fail');
+        }
+        //add the new div to the test container
+        testContainer.appendChild(pf);
+
+        //create div for the output of the div
+        const out = document.createElement('div');
+        //apply the styling for the output using the class
+        out.classList.add('output');
+        out.textContent = result.name; //setting the name of the test
+        testContainer.appendChild(out); //add the new div to the test container
+
+        //add the test container to the results screen container
+        resultsScreen.appendChild(testContainer);
+    });
+   
+})
+

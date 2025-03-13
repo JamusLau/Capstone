@@ -102,3 +102,51 @@ textarea {
     border: 1px solid #ccc;
     border-radius: 5px;
 }
+
+/* Style for box that contains all of mocha's test results */
+#mocha-test-results {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* for mocha test stuff */
+/* Class for the basic test box for each test case */
+.mocha-case-box {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #ddd;  /* Border around each test case */
+    background-color: #f9f9f9;  /* Default background color */
+    margin-bottom: 10px;  /* Space between test cases */
+}
+
+/* Class for the pass/fail box */
+.mocha-case-box .status {
+    width: 100px;
+    text-align: center;
+    padding: 5px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+/* sub classes */
+.mocha-case-box .status.pass {
+    background-color: #aee2bb;
+    color: #155724;
+}
+
+.mocha-case-box .status.fail {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* class for the text output */
+.mocha-case-box .output {
+    flex-grow: 1;
+    font-size: 14px;
+    color: #333;
+    padding-left: 20px;
+}
