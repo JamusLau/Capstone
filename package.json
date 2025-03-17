@@ -5,8 +5,7 @@
   "scripts": {
     "test": "mocha",
     "start": "electron .",
-    "build": "electron-builder",
-    "testmocha": "mocha --reporter mocha-junit-reporter --reporter-options mochaFile=test-results.xml"
+    "build": "npx electron-packager . --overwrite"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +19,9 @@
   },
   "dependencies": {
     "acorn": "^8.14.0",
-    "acorn-walk": "^8.3.4"
+    "acorn-walk": "^8.3.4",
+    "electron-packager": "^17.1.2",
+    "mocha": "^11.1.0",
+    "mocha-junit-reporter": "^2.2.1"
   }
 }

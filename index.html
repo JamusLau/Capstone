@@ -27,6 +27,7 @@
                 <option value="Specify">Specify</option>
             </select>
             <div id="types-for-function" style="display:none"></div>
+            <div id="generation-type-for-function" style="display:none"></div>
             <!-- Shows test being selected for deletion -->
             <h2>Test selected for Delete:</h2>
             <ul id="test-selected-delete"></ul>
@@ -53,11 +54,16 @@
                 <!-- Generate count -->
                 <!-- Generates tests based on best known values -->
             <label for="generationCount">Number of cases generated per function:</label>
-            <input type="number" id="generationCount" style="max-width: 50px;"><br>
+            <input type="number" id="generationCount" style="max-width: 50px;" onchange="updateGenerationCount()"><br><br>
+                <!-- Type of generation -->
+            <label for="generationType">Type of generation:</label>
+            <select name="generationType" id="generationType" onchange="updateGenerationType(), showGenerationTypeForFunction()">
+                <option value="random">Random</option>
+                <option value="normalCurve">Normal Curve</option>
+            </select> <br> <br>
                 <!-- Include edge cases -->
-            <input type="checkbox" id="includeEdgeCases" name="includeEdgeCases" value="includeEdgeCases">
+            <input type="checkbox" id="includeEdgeCases" name="includeEdgeCases" value="includeEdgeCases" onchange="updateEdgeChecked()">
             <label for="includeEdgeCases">Include Edge Cases</label> <br> <br>
-                <!-- Run tests -->
 
             <!-- ----------------------------------------------- -->
             <!-- Creator Stuff -->

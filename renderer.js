@@ -5,9 +5,11 @@ const functionSelected = document.getElementById('function-selected');
 const functionTestList = document.getElementById('function-test-list');
 const testSelectedDelete = document.getElementById('test-selected-delete');
 const fnTypesDiv = document.getElementById('types-for-function');
+const generationTypeSelect = document.getElementById('generationType');
+const fnGenTypesDiv = document.getElementById('generation-type-for-function');
+const edgeCheckedBox = document.getElementById('includeEdgeCases');
+const generationCountBox = document.getElementById('generationCount');
 const { createTemplate } = require('./assets/scripts/functions.js');
-
-const Mocha = require('mocha');
 
 // function to show the creator box and button
 async function showCreator() {
@@ -43,12 +45,40 @@ function hideCreator() {
 // function to show the types for the function parameters
 async function showTypesForFunction() {
     var x = document.getElementById("doSpecifyType");
-    if (x.value == "All")
-    {
+    if (x.value == "All") {
         fnTypesDiv.style.display = "none";
     } else if (x.value == "Specify") {
         fnTypesDiv.style.display = "block";
     }
+}
+
+async function showGenerationTypeForFunction() {
+    var x = document.getElementById("doSpecifyType");
+    if (generationTypeSelect.value == "random")
+    {
+        fnGenTypesDiv.style.display = "none";
+    } else if (generationTypeSelect.value == "normalCurve" && x.value == "Specify") {
+        fnGenTypesDiv.style.display = "block";
+    } 
+}
+
+async function updateGenerationType() {
+    await ipcRenderer.invoke('set-generation-type', generationTypeSelect.value);
+}
+
+async function updateEdgeChecked() {
+    await ipcRenderer.invoke('set-edge-checked', edgeCheckedBox.checked);
+}
+
+async function updateGenerationCount() {
+    if (generationCountBox.value < 0) {
+        generationCountBox.value = 0;
+    } else if (generationCountBox.value > 1000) {
+        generationCountBox.value = 1000;
+    } else {
+        generationCountBox.value = Math.floor(generationCountBox.value);
+    }
+    await ipcRenderer.invoke('set-generation-count', generationCountBox.value);
 }
 
 // Add listener to the scan button to scan the set filepath for all js files and functions
@@ -65,13 +95,50 @@ document.getElementById('scanButton').addEventListener('click', async () => {
 
     console.log(inputElement.files);
 
+    // --------------- OLD CODE -----------------------
     // maps the files to an array of objects with the name, path, and webkitRelativePath
-    const allFiles = Array.from(inputElement.files).map(file => ({
-        name: file.name,
-        path: __dirname + "\\" + file.webkitRelativePath,
-        webkitRelativePath: file.webkitRelativePath,
-    }));
-    console.log(allFiles);
+    // const allFiles = Array.from(inputElement.files).map(file => ({
+    //     name: file.name,
+    //     path: __dirname + "\\" + file.webkitRelativePath,
+    //     webkitRelativePath: file.webkitRelativePath,
+    //     file: file
+    // }));
+    // console.log(allFiles);
+    // ------------------------------------------------
+    // ---------------- NEW CODE ----------------------
+    // map the files to an array of objects with the name, path, file itself and contents of file
+    let allFiles = [];
+    // use promise to ensure all files have been read before continuing
+    const promises = Array.from(inputElement.files).map(file => {
+        return new Promise((resolve, reject) => {
+            // use filereader to read the file content
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // gets the file content
+                const fileContent = e.target.result;
+                // create file object with all needed information
+                const fileObject = {
+                    name: file.name,
+                    path: __dirname + "\\" + file.webkitRelativePath,
+                    file: file,
+                    content: fileContent,
+                    webkitRelativePath: file.webkitRelativePath
+                };
+                allFiles.push(fileObject);
+                resolve();
+            };
+
+            reader.onerror = function(e) {
+                reject(`Error reading file: ${file.name}`);
+            }
+
+            reader.readAsText(file);
+        })
+    });
+
+    await Promise.all(promises);
+    console.log("promises all files", allFiles);
+    // ------------------------------------------------
 
     // sends the files to the main process using an ipc call to get all the functions
     const functions = await ipcRenderer.invoke('get-functions', allFiles);
@@ -192,6 +259,37 @@ functionTestList.addEventListener('receiveTest', async function(event) {
             typeHead.value = type[1];
             fnTypesDiv.appendChild(typeHead);
             fnTypesDiv.appendChild(document.createElement('br'));
+
+            // create label for the min value for normal curve generation
+            const minLabel = document.createElement('label');
+            minLabel.setAttribute('for', 'min');
+            minLabel.textContent = type[0] + " Min: ";
+            fnGenTypesDiv.appendChild(minLabel);
+
+            // min value input for the normal curve generation
+            const inputMin = document.createElement('input');
+            inputMin.setAttribute('id', 'min');
+            inputMin.setAttribute('placeholder', 'Min');
+            inputMin.addEventListener('change', async () => {
+                await ipcRenderer.invoke('update-min-max', signature, inputMin.value, type[0], 'min');
+            });
+            fnGenTypesDiv.appendChild(inputMin);
+
+            // create label for the max value for normal curve generation
+            const maxLabel = document.createElement('label');
+            maxLabel.setAttribute('for', 'max');
+            maxLabel.textContent = type[0] + " Max: ";
+            fnGenTypesDiv.appendChild(maxLabel);
+
+            // max value for the normal curve generation
+            const inputMax = document.createElement('input');
+            inputMax.setAttribute('id', 'max');
+            inputMax.setAttribute('placeholder', 'Max');
+            inputMax.addEventListener('change', async () => {
+                await ipcRenderer.invoke('update-min-max', signature, inputMax.value, type[0], 'max');
+            });
+            fnGenTypesDiv.appendChild(inputMax);
+            fnGenTypesDiv.appendChild(document.createElement('br'));
         })
     }
     //---------------------------------------------------------
@@ -344,19 +442,14 @@ document.getElementById("testFileInput").addEventListener('change', async () => 
 document.getElementById("generateTestBtn").addEventListener('click', async () => {
     //gets the file name from input
     var fileName = document.getElementById('generatedTestFileName').value;
-    //gets the count from input
-    var count = document.getElementById('generationCount').value;
-    let edgeChecked = document.getElementById('includeEdgeCases').checked;
+
     //sets default if file name is empty
     if (fileName == "" || fileName == null) {
         fileName = "GeneratedTests";
     }
-    //sets default if count is empty
-    if (count == "" || count == null) {
-        count = 0;
-    }
+
     //invoke function to generate and save tests to file
-    ipcRenderer.invoke('generate-and-save-tests', "./tests/" + fileName + ".js", count, edgeChecked);
+    ipcRenderer.invoke('generate-and-save-tests', "./tests/" + fileName + ".js");
 })
 
 // Adds listener to the button to run the tests using mocha

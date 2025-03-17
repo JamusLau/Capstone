@@ -27,12 +27,25 @@ const functionsExtracted = new Map();
 //  Format: Map<scriptName, Array<functionName>>
 const scriptFunctionsMap = new Map();
 //  map to store all defined parameter types for each function -> Map<functionSignature, tuple[string, string]>
-//  Format: Map<functionSignature, Set<Array<paramName, paramType>>
+//  Format: Map<functionSignature, Set<Array[paramName, paramType]>
 const functionParamTypes = new Map();
+// map to store the min/max value of each function's parameter
+// Format: Map<functionSignature, Map<paramName, Array[min, max]>
+const fnMinMaxValueMap = new Map();
 
 // Saves all the created test cases for each function
 // Format: Map<functionSignature, Set<FunctionTest>>
 const fnCasesMap = new Map();
+
+//save type of generation for test cases
+//supported: random, normalCurve
+var generationType = 'random';
+
+//save if edge cases are included
+var edgeChecked = false;
+
+//save number of count for generating cases
+var generationCount = 0;
 
 // store reference for test's user cases for each function
 // eachFn should have an array of test objects
@@ -113,7 +126,7 @@ ipcMain.handle('get-functions', async (event, files) => {
 // [Returns] All functions extracted from the files
 ipcMain.handle('get-extracted-functions', async (event) => {
     return functionsExtracted;
-})
+});
 
 // [IPCHandler]
 // [Description] Handler to get currently selected function
@@ -154,7 +167,7 @@ ipcMain.handle('store-function-test', async (event, fnSignature, fnTestBody) => 
     // const obj = new FunctionTest(fnSignature, fnTestBody);
     // fnCasesMap.set(fnSignature, obj);
     console.log("Function test stored: ", obj);
-})
+});
 
 // [IPCHandler]
 // [Description] Sets the currently selected function with signature
@@ -163,7 +176,7 @@ ipcMain.handle('store-function-test', async (event, fnSignature, fnTestBody) => 
 ipcMain.handle('set-selected-function', async (event, fnSig) => {
     fnSelected = fnSig;
     console.log("Function selected: ", fnSelected);
-})
+});
 
 // [IPCHandler]
 // [Description] Sets the currently selected test to delete
@@ -172,7 +185,7 @@ ipcMain.handle('set-selected-function', async (event, fnSig) => {
 ipcMain.handle('set-selected-test-delete', async(event, functionTest) => {
     testSelectedDelete = functionTest;
     console.log("Test selected to delete: ", testSelectedDelete);
-})
+});
 
 // [IPCHandler]
 // [Description] Deletes the currently selected test
@@ -185,7 +198,7 @@ ipcMain.handle('delete-selected-test', async(event) => {
         }
     })
     console.log("Test deleted: ", testSelectedDelete);
-})
+});
 
 // [IPCHandler]
 // [Description] Retrieves all tests for a function from fnCasesMap
@@ -196,7 +209,7 @@ ipcMain.handle('get-tests-for-function', async (event, fnSignature) => {
     console.log("Function signature received: ", fnSignature);
     console.log("Function test found: ", fnCasesMap.get(fnSignature));
     return fnCasesMap.get(fnSignature);
-})
+});
 
 // [IPCHandler]
 // [Description] Saves all tests in fnCasesMap to a file
@@ -221,7 +234,7 @@ ipcMain.handle('save-tests-to-file', async (event, outputFilePath) => {
     })
     fs.writeFileSync(outputFilePath, data, 'utf8');
     console.log("User tests saved to: ", outputFilePath);
-})
+});
 
 // [IPCHandler]
 // [Description] Loads tests from a file to fnCasesMap
@@ -284,7 +297,7 @@ ipcMain.handle('load-tests-from-file', async (event, fileContent) => {
 
     console.log("Tests loaded from file: ", fnCasesMap);
     
-})
+});
 
 // [IPCHandler]
 // [Description] Sets the type of the param for a function
@@ -300,7 +313,7 @@ ipcMain.handle('set-function-param-types', async(event, fnSignature, paramName, 
         }
     })
     console.log("Function param types updated: ", functionParamTypes);
-})
+});
 
 // [IPCHandler]
 // [Description] Gets the param types of the function
@@ -308,15 +321,15 @@ ipcMain.handle('set-function-param-types', async(event, fnSignature, paramName, 
 // [Returns] None
 ipcMain.handle('get-function-param-types', async(event, fnSignature) => {
     return functionParamTypes.get(fnSignature);
-})
+});
 
 // [IPCHandler]
 // [Description] Generates tests and saves them to a file
 // [Parameters] outputFilePath - Path to save the file to
 //              count - Number of tests to generate
 // [Returns] None
-ipcMain.handle('generate-and-save-tests', async (event, outputFilePath, count, edgeChecked) => {
-    console.log("Generate tests @" + outputFilePath + " count: " + count); 
+ipcMain.handle('generate-and-save-tests', async (event, outputFilePath) => {
+    console.log("Generate tests @" + outputFilePath + " count: " + generationCount); 
 
     // stores all the generated test cases
     // stores it in the describe block
@@ -331,8 +344,10 @@ ipcMain.handle('generate-and-save-tests', async (event, outputFilePath, count, e
 
         // get the types of the parameters for the function
         var types = functionParamTypes.get(key);
+        var minmax = fnMinMaxValueMap.get(key);
+        console.log("mainminxmax", minmax);
         // generates test cases based on the types, count and edge included (?)
-        var cases = generateCasesForFunction(value, types, count, edgeChecked);
+        var cases = generateCasesForFunction(value, types, generationCount, generationType, minmax, edgeChecked);
         // add to all the generated test cases
         allCasesGenerated.push(cases);
     })
@@ -348,7 +363,56 @@ ipcMain.handle('generate-and-save-tests', async (event, outputFilePath, count, e
     data += allCasesGenerated.join('\n\n');
     fs.writeFileSync(outputFilePath, data, 'utf8');
     console.log("Tests generated and saved to: ", outputFilePath);
-})
+});
+
+// [IPCHandler]
+// [Description] Change generation type for test cases
+// [Parameters] Type - random / normalCurve
+ipcMain.handle('set-generation-type', async (event, type) => {
+    if (type === 'random' || type === 'normalCurve') {
+        generationType = type;
+        console.log("Generation type changed to: ", generationType);
+    } else {
+        console.log("Invalid generation type: ", type);
+    }
+});
+
+// [IPCHandler]
+// [Description] Get generation type
+// [Return] Generation type
+ipcMain.handle('get-generation-type', async (event) => {
+    return generationType;
+});
+
+// [IPCHandler]
+// [Description] Change generation count for test cases
+// [Parameters] count - number
+ipcMain.handle('set-generation-count', async (event, count) => {
+    generationCount = count;
+    console.log("Generation count: ", generationCount);
+});
+
+// [IPCHandler]
+// [Description] Get generation count
+// [Return] Generation count
+ipcMain.handle('get-generation-count', async (event) => {
+    return generationCount;
+});
+
+// [IPCHandler]
+// [Description] Set edge checked
+// [Parameters] boolean - edge checked
+ipcMain.handle('set-edge-checked', async (event, check) => {
+    edgeChecked = check;
+    console.log("Edge checked: ", edgeChecked);
+});
+
+// [IPCHandler]
+// [Description] Get edge checked
+// [Return] boolean
+ipcMain.handle('get-edge-checked', async (event) => {
+    return edgeChecked;
+});
 
 // [IPCHandler]
 // [Description] Run mocha with all the tests in the tests folder
@@ -382,6 +446,45 @@ ipcMain.handle('run-mocha', async (event) => {
     return results;
 });
 
+// [IPCHandler]
+// [Description] Sets the min/max value of the function
+// [Parameters] fnSignature - Signature of the function
+//              value - Value to set
+//              param - Parameter to set
+//              which - min/max
+// Format: Map<functionSignature, Map<paramName, Array[min, max]>
+ipcMain.handle('update-min-max', async (event, fnSignature, value, param, which) => {
+    if (which == 'min') {
+        //has both fnsignature entry and param entry
+        if (fnMinMaxValueMap.has(fnSignature) && fnMinMaxValueMap.get(fnSignature).has(param)) {
+            fnMinMaxValueMap.get(fnSignature).set(param, [value, fnMinMaxValueMap.get(fnSignature).get(param)[1]]);
+        } else if (fnMinMaxValueMap.has(fnSignature)) { //only fnsignature entry
+            fnMinMaxValueMap.get(fnSignature).set(param, [value, undefined]);
+        } else {
+            fnMinMaxValueMap.set(fnSignature, new Map([[param, [value, undefined]]]));
+        }
+        console.log("Min value set: ", fnMinMaxValueMap.get(fnSignature));
+    } else if (which == 'max') {
+        if (fnMinMaxValueMap.has(fnSignature) && fnMinMaxValueMap.get(fnSignature).has(param)) {
+            fnMinMaxValueMap.get(fnSignature).set(param, [fnMinMaxValueMap.get(fnSignature).get(param)[0], value]);
+        } else if (fnMinMaxValueMap.has(fnSignature)) { //only fnsignature entry
+            fnMinMaxValueMap.get(fnSignature).set(param, [undefined, value]);
+        } else {
+            fnMinMaxValueMap.set(fnSignature, new Map([[param, [undefined, value]]]));
+        }
+        console.log("Max value set: ", fnMinMaxValueMap.get(fnSignature));
+    } else {
+        console.log ("Unrecognized value when setting min/max!");
+    }
+});
+
+// [IPCHandler]
+// [Description] Gets the min/max value of a function signature
+// [Returns] min/max in array [min, max]
+ipcMain.handle('get-min-max', async (event, fnSignature) => {
+    return fnMinMaxValueMap.get(fnSignature);
+});
+
 //checks when Electron has finished loading, then runs the function
 app.whenReady().then(createWindow);
 
@@ -391,4 +494,4 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();
     }
-})
+});
