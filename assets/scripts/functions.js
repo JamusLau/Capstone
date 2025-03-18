@@ -364,8 +364,15 @@ function createNormalCurveCaseTestError(fnObject, types, minmax) {
         // create the new name for the type
         let newName = `i${t}${counter}`;
         newArgs.push(newName); // add the new name to the newArgs array
-        let value = RandomizeBoxMuller(t, minMaxArr[counter]); //get the value using box-muller
-        console.log("new box muller value: ", value);
+        let value; // to store new value
+        if (t == 'Number') {
+            value = RandomizeBoxMuller(t, minMaxArr[counter]); //get the value using box-muller
+            console.log("new box muller value: ", value);
+        } else {
+            value = RandomizeValue(t); //get the value using randomize instead, since box-muller is only number
+            console.log("box muller not avail, new value: ", value);
+        }
+        
         switch(t) {
             case 'Number':
                 template += `        let ${newName} = ${value};\n`;
@@ -382,8 +389,23 @@ function createNormalCurveCaseTestError(fnObject, types, minmax) {
             case 'Undefined':
                 template += `        let ${newName} = ${value};\n`;
                 break;
+            case 'Array':
+                template += `        let ${newName} = ${JSON.stringify(value)};\n`;
+                break;
+            case 'Object':
+                template += `        let ${newName} = ${JSON.stringify(value)};\n`;
+                break;
             case 'Date':
                 template += `        let ${newName} = new Date("${value}");\n`;
+                break;
+            case 'Error':
+                template += `        let ${newName} = ${value}\n`;
+                break;
+            case 'Map':
+                template += `        let ${newName} = new Map(JSON.parse(${JSON.stringify(value)}));\n`;
+                break;
+            case 'Set':
+                template += `        let ${newName} = new Set(JSON.parse(${JSON.stringify(value)}));\n`;
                 break;
             default:
                 template += `        let ${newName} = ${value};\n`;
@@ -659,7 +681,7 @@ function EdgeValue(type) {
 //returns a randomized value based on the normal curve
 // uses Box-Muller Transform algorithm
 function RandomizeBoxMuller(type, minmax) {
-    if (minmax.length <= 0) return null;
+    if (minmax.length <= 0 || !Array.isArray(minmax[1]) || minmax[1].length < 2) return null;
 
     const u1 = Math.random();
     const u2 = Math.random();
@@ -669,14 +691,20 @@ function RandomizeBoxMuller(type, minmax) {
     console.log("minmax in box:", minmax);
 
     // as passed in format will be ['par1', ['1', '12']]
-    let min, max;
-    min = minmax[1][0] == undefined || minmax[1][0] == null ? 0 : minmax[1][0];
-    max = minmax[1][1] == undefined || minmax[1][1] == null ? 1000000 : minmax[1][1];
+    let min = Number(minmax[1][0]) || 0;
+    let max = Number(minmax[1][1]) || 1000000;
+
+    if (min > max) {
+        let temp = min;
+        min = max;
+        max = temp;
+    }
 
     // for normal distribution, +/- 3 std dev should cover range
     const mean = (min + max) / 2;
     const stdDev = (max - min) / 6;
-    let value = Math.max(min, Math.min(max, mean + z0 * stdDev));
+    let value = mean + z0 * stdDev;
+    value = Math.max(min, Math.min(max, value));
 
     return value;
 }
