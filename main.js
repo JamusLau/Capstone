@@ -75,6 +75,22 @@ function createWindow() {
     });
 }
 
+function createTestDir() {
+    //check if filepath exists, if not create
+    const testsDir = "./tests";
+    fs.stat(testsDir, (err, stats) => {
+        if (err) {
+            if (err.code === 'ENOENT') {
+                fs.mkdir(testsDir, { recursive: true }, (err) => {
+                    if (err) {
+                        console.log("Error creating directory: ", err);
+                    }
+                });
+            }
+        }
+    })
+}
+
 // [IPCHandler]
 // [Description] Handler to create a signature by passing in the function name and file name
 // [Parameters] name - Name of the function
@@ -487,6 +503,7 @@ ipcMain.handle('get-min-max', async (event, fnSignature) => {
 
 //checks when Electron has finished loading, then runs the function
 app.whenReady().then(createWindow);
+app.whenReady().then(createTestDir);
 
 app.on('window-all-closed', () => {
     //for macOS - app usually keeps running in the background
